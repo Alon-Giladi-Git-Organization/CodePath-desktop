@@ -8,7 +8,8 @@ export type NavScreen =
   | 'stats' 
   | 'settings'
   | 'architecture'
-  | 'leaderboard';
+  | 'leaderboard'
+  | 'dragdrop';
 
 export type AppLanguage = 'en' | 'he';
 
@@ -32,6 +33,7 @@ export interface UserProfile {
   completedLessons: string[];
   completedExercises: string[];
   completedArchitectureChallenges: string[];
+  customExercises?: Exercise[];
   quizScores: Record<string, { score: number; total: number; percentage: number }>;
   unlockedAchievements: string[];
   dailyGoalMinutes: number;
@@ -221,6 +223,8 @@ export interface Exercise {
   hintsHe?: string[];
   errorGuides: ErrorGuide[];
   xpReward: number;
+  isAiGenerated?: boolean;
+  createdAt?: string;
 }
 
 export interface QuizOption {

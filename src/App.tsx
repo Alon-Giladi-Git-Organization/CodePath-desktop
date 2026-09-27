@@ -127,6 +127,18 @@ export default function App() {
             <CodePracticeView
               exerciseId={activeExerciseId}
               user={user}
+              initialSubModule="ide"
+              onNavigate={navigateTo}
+              onCompleteExercise={completeExercise}
+              onOpenMentor={handleOpenMentor}
+            />
+          )}
+
+          {currentScreen === 'dragdrop' && (
+            <CodePracticeView
+              exerciseId={activeExerciseId}
+              user={user}
+              initialSubModule="dragdrop"
               onNavigate={navigateTo}
               onCompleteExercise={completeExercise}
               onOpenMentor={handleOpenMentor}

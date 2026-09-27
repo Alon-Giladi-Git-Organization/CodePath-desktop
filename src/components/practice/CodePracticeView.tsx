@@ -9,6 +9,7 @@ import { CodeBlock } from '../code/CodeBlock';
 import { InlineCode } from '../code/InlineCode';
 import { CoseMascot } from '../common/CoseMascot';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { DragDropPracticeView } from './DragDropPracticeView';
 import { 
   Play, 
   CheckCircle2, 
@@ -20,7 +21,9 @@ import {
   Zap, 
   ChevronRight,
   ArrowLeft,
-  BookOpen
+  BookOpen,
+  Terminal,
+  Puzzle
 } from 'lucide-react';
 import { soundFx } from '../../utils/sound';
 import confetti from 'canvas-confetti';
@@ -28,6 +31,7 @@ import confetti from 'canvas-confetti';
 interface CodePracticeViewProps {
   exerciseId: string;
   user: UserProfile;
+  initialSubModule?: 'ide' | 'dragdrop';
   onNavigate: (screen: NavScreen, opts?: { courseId?: string; lessonId?: string; exerciseId?: string; quizId?: string }) => void;
   onCompleteExercise: (exerciseId: string, xpReward?: number) => void;
   onOpenMentor: (initialPrompt?: string) => void;
@@ -36,6 +40,7 @@ interface CodePracticeViewProps {
 export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
   exerciseId,
   user,
+  initialSubModule = 'ide',
   onNavigate,
   onCompleteExercise,
   onOpenMentor,
@@ -43,7 +48,25 @@ export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
   const { t, language, isRtl } = useLanguage();
   const isHe = language === 'he';
 
-  const [allExercises, setAllExercises] = useState<Exercise[]>(EXERCISES);
+  const [activeSubModule, setActiveSubModule] = useState<'ide' | 'dragdrop'>(initialSubModule);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Load custom persisted exercises from localStorage
+  const [allExercises, setAllExercises] = useState<Exercise[]>(() => {
+    try {
+      const saved = localStorage.getItem('codepath_custom_exercises');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed, ...EXERCISES];
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return EXERCISES;
+  });
+
   const currentExercise: Exercise = 
     allExercises.find((e) => e.id === exerciseId) || allExercises[0];
 
@@ -64,14 +87,16 @@ export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
 
   // Sync starter code when exercise changes
   useEffect(() => {
-    setCode(currentExercise.starterCode);
-    setOutput('');
-    setTerminalStatus('idle');
-    setFriendlyFeedback(null);
-    setTestCases([]);
-    setHintsRevealed(0);
-    setIsSuccessUnlocked(user.completedExercises.includes(currentExercise.id));
-  }, [currentExercise.id, user.completedExercises]);
+    if (currentExercise) {
+      setCode(currentExercise.starterCode);
+      setOutput('');
+      setTerminalStatus('idle');
+      setFriendlyFeedback(null);
+      setTestCases([]);
+      setHintsRevealed(0);
+      setIsSuccessUnlocked(user.completedExercises.includes(currentExercise.id));
+    }
+  }, [currentExercise?.id, user.completedExercises]);
 
   const handleResetCode = () => {
     soundFx.playClick();
@@ -85,6 +110,18 @@ export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
   const handleRevealNextHint = () => {
     soundFx.playClick();
     setHintsRevealed((prev) => Math.min(currentExercise.hints.length, prev + 1));
+  };
+
+  // Helper to persist custom exercises
+  const saveCustomExercise = (newEx: Exercise) => {
+    try {
+      const saved = localStorage.getItem('codepath_custom_exercises');
+      const existing: Exercise[] = saved ? JSON.parse(saved) : [];
+      const updated = [newEx, ...existing.filter((e) => e.id !== newEx.id)];
+      localStorage.setItem('codepath_custom_exercises', JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Failed saving custom exercise:', err);
+    }
   };
 
   // Run Code in Sandbox
@@ -200,58 +237,77 @@ export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
   const handleGenerateAIExercise = async () => {
     soundFx.playClick();
     setIsGeneratingAI(true);
+    setApiError(null);
+
     try {
       const response = await fetch('/api/generate-ai-exercise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: currentExercise.title || 'Loops and Functions in Python',
-          language: currentExercise.language || 'python',
-          difficulty: currentExercise.difficulty || 'Beginner',
+          topic: currentExercise?.title || 'Loops and Functions in Python',
+          language: currentExercise?.language || 'python',
+          difficulty: currentExercise?.difficulty || 'Beginner',
           category: 'coding',
           appLanguage: language,
         }),
       });
 
-      if (!response.ok) throw new Error('API failed');
+      if (!response.ok) {
+        throw new Error(`API response status ${response.status}`);
+      }
+
       const data = await response.json();
+
+      // Format requirements safely
+      const rawReqs = Array.isArray(data.requirements) ? data.requirements : [];
+      const formattedReqs = rawReqs.map((r: any, idx: number) => ({
+        id: `req-${idx}`,
+        text: typeof r === 'string' ? r : r.text || 'Implement required logic',
+      }));
+
+      const fallbackReqs = [
+        { id: 'req-1', text: isHe ? 'ממש את הלוגיקה הנדרשת בקוד' : 'Implement required logic in code' },
+        { id: 'req-2', text: isHe ? 'וודא פלט תקין בסביבת ההרצה' : 'Ensure valid terminal output' },
+      ];
+
+      const rawHints = Array.isArray(data.hints) && data.hints.length > 0 ? data.hints : [
+        isHe ? 'קרא את ההוראות בזהירות ופרק את המשימה לצעדים קטנים.' : 'Read instructions carefully and break down into small steps.'
+      ];
 
       const newEx: Exercise = {
         id: data.id || `ex-ai-${Date.now()}`,
-        lessonId: currentExercise.lessonId,
-        courseId: currentExercise.courseId,
-        title: data.title || (isHe ? 'תרגיל שנוצר ב-AI' : 'AI Generated Exercise'),
-        titleHe: data.title || 'תרגיל שנוצר ב-AI',
-        language: data.language || 'python',
-        difficulty: 'Beginner',
-        taskDescription: data.concept || (isHe ? 'קרא את ההוראות והשלם את הקוד הנדרש.' : 'Read instructions and write the required code.'),
-        taskDescriptionHe: data.concept || 'קרא את ההוראות והשלם את הקוד הנדרש.',
-        requirements: [
-          { id: 'req-1', text: data.question || 'Complete the implementation' },
-          { id: 'req-2', text: 'Ensure valid syntax and clean output' }
-        ],
-        requirementsHe: [
-          { id: 'req-1', text: data.question || 'השלם את המימוש הנדרש' },
-          { id: 'req-2', text: 'וודא תחביר תקין ופלט מדויק' }
-        ],
-        starterCode: data.codeSnippet || `# AI Generated Starter Code\n# Write your code here:\n`,
-        solutionCode: data.codeSnippet || `# Reference solution\n`,
-        expectedOutput: `Output verified`,
-        hints: [
-          data.tip || (isHe ? 'רמז: שים לב להזחות ולסוג המשתנים.' : 'Hint: Watch your indentation and data types.')
-        ],
-        hintsHe: [
-          data.tip || 'רמז: שים לב להזחות ולסוג המשתנים.'
-        ],
+        lessonId: currentExercise?.lessonId || 'custom-ai-lesson',
+        courseId: currentExercise?.courseId || 'python-beginners',
+        title: data.title || (isHe ? 'אתגר קוד שנוצר ב-AI' : 'AI Generated Challenge'),
+        titleHe: data.title || 'אתגר קוד שנוצר ב-AI',
+        language: data.language || currentExercise?.language || 'python',
+        difficulty: data.difficulty || 'Beginner',
+        taskDescription: data.description || data.taskDescription || data.concept || (isHe ? 'השלם את המשימה לפי ההנחיות.' : 'Complete the task according to instructions.'),
+        taskDescriptionHe: data.description || data.taskDescription || data.concept || 'השלם את המשימה לפי ההנחיות.',
+        requirements: formattedReqs.length > 0 ? formattedReqs : fallbackReqs,
+        requirementsHe: formattedReqs.length > 0 ? formattedReqs : fallbackReqs,
+        starterCode: data.starter_code || data.starterCode || data.codeSnippet || `# AI Generated Code Challenge\n# Write your code here:\n`,
+        solutionCode: data.solution || data.solutionCode || `# Reference Solution\n`,
+        expectedOutput: data.expected_output || data.expectedOutput || `Output verified`,
+        hints: rawHints,
+        hintsHe: rawHints,
         errorGuides: [],
-        xpReward: 50,
+        xpReward: data.xpReward || 50,
+        isAiGenerated: true,
       };
 
-      setAllExercises((prev) => [newEx, ...prev]);
+      setAllExercises((prev) => [newEx, ...prev.filter((e) => e.id !== newEx.id)]);
+      saveCustomExercise(newEx);
+      setCode(newEx.starterCode);
       onNavigate('practice', { exerciseId: newEx.id });
       soundFx.playSuccess();
-    } catch (err) {
-      console.warn('AI Exercise error:', err);
+    } catch (err: any) {
+      console.warn('AI Exercise Generation Error:', err);
+      setApiError(
+        isHe
+          ? 'שגיאה ביצירת האתגר ב-AI. אנא וודא חיבור לרשת ונסה שוב בעוד כדקה.'
+          : 'Failed to generate AI challenge. Please check connection and try again in a moment.'
+      );
     } finally {
       setIsGeneratingAI(false);
     }
@@ -269,52 +325,136 @@ export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
 
   return (
     <div id="practice-screen" className="max-w-7xl mx-auto space-y-6 pb-20">
-      {/* Top Breadcrumb & Task Header */}
-      <div className="cose-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-extrabold text-[#777777] uppercase tracking-wider">
-            <span
-              onClick={() => onNavigate('lesson', { lessonId: currentExercise.lessonId })}
-              className="hover:text-[#58CC02] cursor-pointer transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Lesson</span>
-            </span>
-            <span>/</span>
-            <span>{currentExercise.difficulty} Challenge</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
-            {exerciseTitle}
-          </h1>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Sub-Module Switcher: IDE vs Drag & Drop */}
+      <div className="cose-card p-2 sm:p-3 flex items-center justify-start gap-3 bg-[#F7F7F7]">
+        <div className="flex items-center gap-2 w-full sm:max-w-md">
           <button
-            onClick={handleGenerateAIExercise}
-            disabled={isGeneratingAI}
-            className="btn-outline text-xs font-extrabold !py-2 !px-3.5 border-[#1CB0F6] text-[#1CB0F6] hover:bg-[#EBF8FF] flex items-center gap-2"
+            onClick={() => {
+              soundFx.playClick();
+              setActiveSubModule('ide');
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wide transition-all cursor-pointer ${
+              activeSubModule === 'ide'
+                ? 'bg-[#1CB0F6] text-white shadow-sm'
+                : 'text-[#777777] hover:text-[#3C3C3C] hover:bg-[#E5E5E5]'
+            }`}
           >
-            <Sparkles className="w-4 h-4 text-[#1CB0F6] animate-pulse" />
-            <span>{isGeneratingAI ? t('practiceAIGenerating') : t('practiceAIGenerateBtn')}</span>
+            <Terminal className="w-4 h-4" />
+            <span>{isHe ? 'עורך קוד ואתגרי AI' : 'Interactive IDE'}</span>
           </button>
 
           <button
-            onClick={() => onOpenMentor(`Give me a hint on "${currentExercise.title}" without spoiling the code`)}
-            className="btn-outline text-xs font-extrabold !py-2 !px-3.5 flex items-center gap-2"
+            onClick={() => {
+              soundFx.playClick();
+              setActiveSubModule('dragdrop');
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wide transition-all cursor-pointer ${
+              activeSubModule === 'dragdrop'
+                ? 'bg-[#FFC800] text-[#3C3C3C] shadow-sm'
+                : 'text-[#777777] hover:text-[#3C3C3C] hover:bg-[#E5E5E5]'
+            }`}
           >
-            <Sparkles className="w-4 h-4 text-[#1CB0F6]" />
-            <span>{t('dashAskMentor')}</span>
-          </button>
-
-          <button
-            onClick={() => setIsSolutionModalOpen(true)}
-            className="btn-outline text-xs font-extrabold !py-2 !px-3.5 flex items-center gap-2 text-[#777777]"
-          >
-            <Eye className="w-4 h-4" />
-            <span>{t('practiceViewSolution')}</span>
+            <Puzzle className="w-4 h-4" />
+            <span>{isHe ? 'תרגול Drag & Drop' : 'Drag & Drop'}</span>
           </button>
         </div>
       </div>
+
+      {activeSubModule === 'dragdrop' ? (
+        <DragDropPracticeView
+          user={user}
+          onNavigate={onNavigate}
+          onOpenMentor={onOpenMentor}
+          onCompleteChallenge={(id, xp) => onCompleteExercise(id, xp)}
+        />
+      ) : (
+        <>
+          {/* Top Breadcrumb, Challenge Switcher & Task Header */}
+      <div className="cose-card p-5 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-extrabold text-[#777777] uppercase tracking-wider">
+              <span
+                onClick={() => onNavigate('lesson', { lessonId: currentExercise.lessonId })}
+                className="hover:text-[#58CC02] cursor-pointer transition-colors flex items-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>{isHe ? 'חזרה לשיעור' : 'Back to Lesson'}</span>
+              </span>
+              <span>/</span>
+              <span>{currentExercise.difficulty} Challenge</span>
+              {currentExercise.isAiGenerated && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#1CB0F6]/10 text-[#1CB0F6] border border-[#1CB0F6]">
+                  AI Generated
+                </span>
+              )}
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
+              {exerciseTitle}
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleGenerateAIExercise}
+              disabled={isGeneratingAI}
+              className="btn-outline text-xs font-extrabold !py-2 !px-3.5 border-[#1CB0F6] text-[#1CB0F6] hover:bg-[#EBF8FF] flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-[#1CB0F6] animate-pulse" />
+              <span>{isGeneratingAI ? (isHe ? 'יוצר אתגר ב-AI...' : 'Creating Challenge...') : t('practiceAIGenerateBtn')}</span>
+            </button>
+
+            <button
+              onClick={() => onOpenMentor(`Give me a hint on "${currentExercise.title}" without spoiling the code`)}
+              className="btn-outline text-xs font-extrabold !py-2 !px-3.5 flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-[#1CB0F6]" />
+              <span>{t('dashAskMentor')}</span>
+            </button>
+
+            <button
+              onClick={() => setIsSolutionModalOpen(true)}
+              className="btn-outline text-xs font-extrabold !py-2 !px-3.5 flex items-center gap-2 text-[#777777]"
+            >
+              <Eye className="w-4 h-4" />
+              <span>{t('practiceViewSolution')}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Challenge Switcher Drawer / Selector */}
+        <div className="pt-3 border-t border-[#E5E5E5] flex items-center justify-between gap-3 overflow-x-auto">
+          <span className="text-xs font-extrabold text-[#777777] shrink-0">
+            {isHe ? 'בחר אתגר מתוך המאגר הגדל:' : 'Select Challenge from Question Bank:'}
+          </span>
+
+          <select
+            value={currentExercise.id}
+            onChange={(e) => onNavigate('practice', { exerciseId: e.target.value })}
+            className="px-3 py-1.5 border-2 border-[#E5E5E5] rounded-xl text-xs font-extrabold text-[#3C3C3C] bg-white focus:border-[#1CB0F6] focus:outline-none max-w-md cursor-pointer"
+          >
+            {allExercises.map((ex) => (
+              <option key={ex.id} value={ex.id}>
+                {ex.isAiGenerated ? '✨ [AI] ' : ''}
+                {isHe && ex.titleHe ? ex.titleHe : ex.title} ({ex.language})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* API Error Alert Banner */}
+      {apiError && (
+        <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-700 text-xs font-bold flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
+            <span>{apiError}</span>
+          </div>
+          <button onClick={() => setApiError(null)} className="underline hover:text-rose-900">
+            {isHe ? 'סגור' : 'Dismiss'}
+          </button>
+        </div>
+      )}
 
       {/* Main 2-Column Split: Instructions vs Editor */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -499,6 +639,8 @@ export const CodePracticeView: React.FC<CodePracticeViewProps> = ({
           </div>
         </div>
       </Modal>
+        </>
+      )}
     </div>
   );
 };

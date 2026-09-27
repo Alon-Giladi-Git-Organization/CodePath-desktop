@@ -14,7 +14,9 @@ import {
   ChevronLeft,
   Layers,
   Award,
-  Code2
+  Code2,
+  Brain,
+  Puzzle
 } from 'lucide-react';
 import { CoseMascot } from '../common/CoseMascot';
 
@@ -52,8 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       screen: 'practice',
       label: t('navPractice'),
-      icon: <Terminal className="w-5 h-5" />,
-      badge: 'Live',
+      icon: <Terminal className="w-5 h-5 text-[#1CB0F6]" />,
+      badge: 'IDE & AI',
     },
     {
       screen: 'architecture',
