@@ -39,6 +39,7 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
   const { t, language, isRtl } = useLanguage();
   const isHe = language === 'he';
 
+  const [challenges, setChallenges] = useState<ArchitectureChallenge[]>(ARCHITECTURE_CHALLENGES);
   const [activeChallengeIndex, setActiveChallengeIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
@@ -54,13 +55,14 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationRun, setSimulationRun] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  const filteredChallenges = ARCHITECTURE_CHALLENGES.filter((ch) => {
+  const filteredChallenges = challenges.filter((ch) => {
     if (selectedCategory === 'all') return true;
     return ch.category === selectedCategory;
   });
 
-  const currentChallenge = filteredChallenges[activeChallengeIndex] || ARCHITECTURE_CHALLENGES[0];
+  const currentChallenge = filteredChallenges[activeChallengeIndex] || challenges[0];
 
   useEffect(() => {
     setSelectedQuality(null);
@@ -101,10 +103,18 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
     }
   };
 
+  const diagnosticOptionsToUse = isHe && currentChallenge.diagnosticOptionsHe && currentChallenge.diagnosticOptionsHe.length > 0
+    ? currentChallenge.diagnosticOptionsHe
+    : currentChallenge.diagnosticOptions;
+
+  const impactOptionsToUse = isHe && currentChallenge.productionImpactOptionsHe && currentChallenge.productionImpactOptionsHe.length > 0
+    ? currentChallenge.productionImpactOptionsHe
+    : currentChallenge.productionImpactOptions;
+
   const handleSelectDiagnostic = (optionId: string) => {
     setSelectedDiagnostic(optionId);
     setDiagnosticEvaluated(true);
-    const opt = currentChallenge.diagnosticOptions.find((o) => o.id === optionId);
+    const opt = diagnosticOptionsToUse.find((o) => o.id === optionId);
     if (opt?.isCorrect) {
       soundFx.playSuccess();
     } else {
@@ -115,7 +125,7 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
   const handleSelectImpact = (optionId: string) => {
     setSelectedImpact(optionId);
     setImpactEvaluated(true);
-    const opt = currentChallenge.productionImpactOptions.find((o) => o.id === optionId);
+    const opt = impactOptionsToUse.find((o) => o.id === optionId);
     if (opt?.isCorrect) {
       soundFx.playSuccess();
       if (!isAlreadyCompleted) {
@@ -131,6 +141,145 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
     }
   };
 
+  // Real-time AI Generation of Architecture Challenge
+  const handleGenerateAIChallenge = async () => {
+    soundFx.playClick();
+    setIsGeneratingAI(true);
+
+    try {
+      const response = await fetch('/api/generate-ai-exercise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: 'High Scale Microservices, Memory Leaks, and Database Optimization',
+          language: 'typescript',
+          difficulty: 'Intermediate',
+          category: 'architecture',
+          appLanguage: language,
+        }),
+      });
+
+      if (!response.ok) throw new Error('API failed');
+      const data = await response.json();
+
+      // Formulate a new ArchitectureChallenge object
+      const newChallenge: ArchitectureChallenge = {
+        id: data.id || `arch-ai-${Date.now()}`,
+        title: data.title || (isHe ? 'אתגר איכות ארכיטקטורה שנוצר ב-AI' : 'AI Generated Architecture Challenge'),
+        titleHe: data.title || 'אתגר איכות ארכיטקטורה שנוצר ב-AI',
+        category: 'scalability',
+        difficulty: 'Intermediate',
+        scenarioDescription: data.concept || 'Evaluating production performance and error resilience under heavy real-time traffic.',
+        scenarioDescriptionHe: data.concept || 'ניתוח ביצועי פרודקשן ועמידות מערכת תחת תעבורת משתמשים כבדה.',
+        language: data.language || 'typescript',
+        expectedQuality: 'bad_crashing',
+        antiPatternName: 'Architectural Defect',
+        antiPatternNameHe: 'פגם ארכיטקטוני במערכת',
+        architecturalPrinciple: 'Clean System Design & Scalability',
+        architecturalPrincipleHe: 'תכנון מערכות נקי וסקיילבילי',
+        codeSnippet: data.codeSnippet || `// Sample architecture snippet\nasync function handleTraffic(req, res) {\n  // Processing\n}`,
+        diagnosticQuestion: data.question || 'What is the architectural bottleneck in this code?',
+        diagnosticQuestionHe: data.question || 'מהו צוואר הבקבוק הארכיטקטוני בקוד זה?',
+        diagnosticOptions: data.options.map((opt: any, idx: number) => ({
+          id: opt.id || `diag-ai-${idx}`,
+          text: opt.text,
+          isCorrect: !!opt.isCorrect,
+          explanation: opt.explanation,
+        })),
+        diagnosticOptionsHe: data.options.map((opt: any, idx: number) => ({
+          id: opt.id || `diag-ai-${idx}`,
+          text: opt.text,
+          isCorrect: !!opt.isCorrect,
+          explanation: opt.explanation,
+        })),
+        productionImpactQuestion: isHe 
+          ? 'מה תהיה ההשפעה של פגם זה על שרתי הפרודקשן?' 
+          : 'What is the blast radius of this defect in production?',
+        productionImpactQuestionHe: 'מה תהיה ההשפעה של פגם זה על שרתי הפרודקשן?',
+        productionImpactOptions: [
+          {
+            id: 'imp-1',
+            text: isHe ? 'התארכות זמני תגובה (Latency) עד קריסת שרתים ו-504 Gateway Timeout' : 'Spike in P99 latency leading to HTTP 504 timeouts and worker crash',
+            isCorrect: true,
+            explanation: isHe ? 'נכון מאוד! העומס חונק את משאבי השרת.' : 'Correct! High resource contention cascades.'
+          },
+          {
+            id: 'imp-2',
+            text: isHe ? 'המשתמשים יראו צבעי גופן שונים' : 'Users will see altered CSS typography styles',
+            isCorrect: false,
+            explanation: isHe ? 'קוד שרת אינו משנה את גופני הלקוח.' : 'Server architecture is unrelated to browser font styling.'
+          },
+          {
+            id: 'imp-3',
+            text: isHe ? 'מסד הנתונים יימחק פיזית' : 'Database hardware will spontaneously reboot',
+            isCorrect: false,
+            explanation: isHe ? 'צוואר בקבוק אינו מוחק נתונים.' : 'Resource exhaustion does not format disks.'
+          }
+        ],
+        productionImpactOptionsHe: [
+          {
+            id: 'imp-1',
+            text: 'התארכות זמני תגובה (Latency) עד קריסת שרתים ו-504 Gateway Timeout',
+            isCorrect: true,
+            explanation: 'נכון מאוד! העומס חונק את משאבי השרת.'
+          },
+          {
+            id: 'imp-2',
+            text: 'המשתמשים יראו צבעי גופן שונים',
+            isCorrect: false,
+            explanation: 'קוד שרת אינו משנה את גופני הלקוח.'
+          },
+          {
+            id: 'imp-3',
+            text: 'מסד הנתונים יימחק פיזית',
+            isCorrect: false,
+            explanation: 'צוואר בקבוק אינו מוחק נתונים.'
+          }
+        ],
+        simulatedMetrics: {
+          loadRps: 500,
+          bad: {
+            cpuPercent: 94,
+            memoryMb: 820,
+            latencyMs: 3450,
+            errorRatePercent: 48,
+            crashReason: isHe ? 'קריסת שרת: ניצול מלא של תהליכי ה-CPU וזמני תגובה חורגים' : 'Server saturation: 100% CPU thread exhaustion and request queue timeout.',
+            crashReasonHe: 'קריסת שרת: ניצול מלא של תהליכי ה-CPU וזמני תגובה חורגים',
+          },
+          good: {
+            cpuPercent: 18,
+            memoryMb: 110,
+            latencyMs: 24,
+            errorRatePercent: 0,
+          }
+        },
+        badCodeExplanation: data.tip || 'Code requires asynchronous batching and resource cleanup.',
+        badCodeExplanationHe: data.tip || 'הקוד דורש ביצוע מרוכז (Batching) ושחרור משאבים.',
+        goodCodeSnippet: `// Refactored Scalable Solution\nexport async function handleTrafficOptimized(req, res) {\n  // Clean architecture\n  return res.json({ status: "optimized" });\n}`,
+        goodCodeExplanation: isHe ? 'ארכיטקטורה מותאמת עומס החוסכת קריאות מיותרות ומפנה זיכרון.' : 'Scalable architecture minimizing roundtrips and reclaiming memory.',
+        goodCodeExplanationHe: 'ארכיטקטורה מותאמת עומס החוסכת קריאות מיותרות ומפנה זיכרון.',
+        keyTakeaways: [
+          'Design for failure resilience and non-blocking asynchronous execution.',
+          'Always clean up event handlers, intervals, and database connections.',
+        ],
+        keyTakeawaysHe: [
+          'תכנן מערכות לטיפול עמיד בכשלים וביצוע אסינכרוני לא-חוסם.',
+          'שחרר תמיד מאזינים, טיימרים וחיבורים למסד הנתונים.',
+        ],
+        xpReward: 50,
+      };
+
+      setChallenges((prev) => [newChallenge, ...prev]);
+      setActiveChallengeIndex(0);
+      setSelectedCategory('all');
+      soundFx.playSuccess();
+    } catch (err) {
+      console.warn('AI Challenge generation fallback:', err);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   const categories = [
     { id: 'all', label: t('archFilterAll') },
     { id: 'scalability', label: t('archFilterScalability') },
@@ -139,6 +288,13 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
     { id: 'solid', label: t('archFilterSolid') },
     { id: 'concurrency', label: t('archFilterConcurrency') },
   ];
+
+  const scenarioTitle = isHe && currentChallenge.titleHe ? currentChallenge.titleHe : currentChallenge.title;
+  const scenarioDesc = isHe && currentChallenge.scenarioDescriptionHe ? currentChallenge.scenarioDescriptionHe : currentChallenge.scenarioDescription;
+  const diagnosticQuestionText = isHe && currentChallenge.diagnosticQuestionHe ? currentChallenge.diagnosticQuestionHe : currentChallenge.diagnosticQuestion;
+  const productionQuestionText = isHe && currentChallenge.productionImpactQuestionHe ? currentChallenge.productionImpactQuestionHe : currentChallenge.productionImpactQuestion;
+  const crashReasonText = isHe && currentChallenge.simulatedMetrics.bad.crashReasonHe ? currentChallenge.simulatedMetrics.bad.crashReasonHe : currentChallenge.simulatedMetrics.bad.crashReason;
+  const goodExplanationText = isHe && currentChallenge.goodCodeExplanationHe ? currentChallenge.goodCodeExplanationHe : currentChallenge.goodCodeExplanation;
 
   return (
     <div id="architecture-screen" className="max-w-6xl mx-auto space-y-8 pb-20">
@@ -164,25 +320,38 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
           </div>
         </div>
 
-        {/* Challenge Selector */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Action / Generator & Challenge Selector */}
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
-            disabled={activeChallengeIndex === 0}
-            onClick={() => setActiveChallengeIndex((prev) => Math.max(0, prev - 1))}
-            className="btn-outline !p-2 disabled:opacity-40"
+            onClick={handleGenerateAIChallenge}
+            disabled={isGeneratingAI}
+            className="btn-outline text-xs font-extrabold !py-2.5 !px-3.5 flex items-center gap-2 border-[#1CB0F6] text-[#1CB0F6] hover:bg-[#EBF8FF]"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 text-[#1CB0F6] animate-pulse" />
+            <span>{isGeneratingAI ? t('archAIGenerating') : t('archAIGenerateBtn')}</span>
           </button>
-          <span className="text-xs font-extrabold text-[#3C3C3C]">
-            {activeChallengeIndex + 1} / {filteredChallenges.length}
-          </span>
-          <button
-            disabled={activeChallengeIndex === filteredChallenges.length - 1}
-            onClick={() => setActiveChallengeIndex((prev) => Math.min(filteredChallenges.length - 1, prev + 1))}
-            className="btn-outline !p-2 disabled:opacity-40"
-          >
-            <ArrowRight className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-2 bg-[#F7F7F7] p-1 rounded-[14px] border border-[#E5E5E5]">
+            <button
+              disabled={activeChallengeIndex === 0}
+              onClick={() => setActiveChallengeIndex((prev) => Math.max(0, prev - 1))}
+              className="btn-outline !p-2 disabled:opacity-40"
+              title="Previous"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-extrabold text-[#3C3C3C] px-2">
+              {activeChallengeIndex + 1} / {filteredChallenges.length}
+            </span>
+            <button
+              disabled={activeChallengeIndex === filteredChallenges.length - 1}
+              onClick={() => setActiveChallengeIndex((prev) => Math.min(filteredChallenges.length - 1, prev + 1))}
+              className="btn-outline !p-2 disabled:opacity-40"
+              title="Next"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -213,10 +382,10 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-[#E5E5E5] pb-4">
           <div>
             <span className="text-xs font-extrabold uppercase text-[#777777] block">
-              {currentChallenge.scenarioDescription}
+              {scenarioDesc}
             </span>
             <h2 className="text-lg sm:text-xl font-extrabold text-[#3C3C3C] mt-0.5">
-              {currentChallenge.title}
+              {scenarioTitle}
             </h2>
           </div>
 
@@ -232,7 +401,7 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
           </div>
         </div>
 
-        {/* Code Inspection Block */}
+        {/* Code Inspection Block (Always dedicated box, LTR, with copy button) */}
         <div className="space-y-3">
           <span className="text-xs font-extrabold uppercase tracking-wider text-[#777777]">
             {t('archInspectTitle')} ({currentChallenge.language})
@@ -284,7 +453,7 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
             </div>
 
             <p className="text-xs text-[#3C3C3C] font-semibold leading-relaxed bg-white p-3 rounded-[10px] border border-[#E5E5E5]">
-              {currentChallenge.simulatedMetrics.bad.crashReason}
+              {crashReasonText}
             </p>
           </div>
         )}
@@ -342,11 +511,11 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
         {qualityEvaluated && (
           <div className="space-y-4 pt-4 border-t-2 border-[#E5E5E5] animate-fadeIn">
             <h3 className="text-sm font-extrabold text-[#3C3C3C]">
-              {currentChallenge.diagnosticQuestion}
+              {diagnosticQuestionText}
             </h3>
 
             <div className="space-y-2.5">
-              {currentChallenge.diagnosticOptions.map((opt) => {
+              {diagnosticOptionsToUse.map((opt) => {
                 const isSelected = selectedDiagnostic === opt.id;
                 return (
                   <div
@@ -363,7 +532,47 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
                     <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[#3C3C3C]">
                       <span>{opt.text}</span>
                       {isSelected && (
-                        <span>{opt.isCorrect ? '✓ Correct' : '✗ Incorrect'}</span>
+                        <span>{opt.isCorrect ? (isHe ? '✓ נכון מאוד' : '✓ Correct') : (isHe ? '✗ שגוי' : '✗ Incorrect')}</span>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <p className="text-xs text-[#777777] mt-1 font-semibold leading-relaxed">
+                        {opt.explanation}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Evaluation Question 3: Production Blast Radius */}
+        {diagnosticEvaluated && (
+          <div className="space-y-4 pt-4 border-t-2 border-[#E5E5E5] animate-fadeIn">
+            <h3 className="text-sm font-extrabold text-[#3C3C3C]">
+              {productionQuestionText}
+            </h3>
+
+            <div className="space-y-2.5">
+              {impactOptionsToUse.map((opt) => {
+                const isSelected = selectedImpact === opt.id;
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleSelectImpact(opt.id)}
+                    className={`p-3.5 rounded-[14px] border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? opt.isCorrect
+                          ? 'bg-[#DBF8C5] border-[#58CC02]'
+                          : 'bg-[#FFE0E0] border-[#FF4B4B]'
+                        : 'bg-white border-[#E5E5E5] hover:border-[#AFAFAF]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[#3C3C3C]">
+                      <span>{opt.text}</span>
+                      {isSelected && (
+                        <span>{opt.isCorrect ? (isHe ? '✓ מעולה (+XP)' : '✓ Correct (+XP)') : (isHe ? '✗ לא מדויק' : '✗ Incorrect')}</span>
                       )}
                     </div>
                     {isSelected && (
@@ -399,7 +608,7 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
                 showLineNumbers={true}
               />
               <div className="p-3 rounded-[10px] bg-white border border-[#E5E5E5] text-xs font-semibold text-[#3C3C3C] leading-relaxed">
-                {currentChallenge.goodCodeExplanation}
+                {goodExplanationText}
               </div>
             </div>
           )}

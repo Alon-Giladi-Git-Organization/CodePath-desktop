@@ -98,7 +98,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </h1>
             <p className="text-sm sm:text-base text-[#777777] font-semibold leading-relaxed">
               {isHe
-                ? `אתה מתקדם מצוין ב-${activeCourse.title}. בוא נמשיך בתרגול!`
+                ? `אתה מתקדם מצוין ב-${activeCourse.titleHe || activeCourse.title}. בוא נמשיך בתרגול!`
                 : `You are making great strides in ${activeCourse.title}. Let's keep your streak alive!`}
             </p>
           </div>
@@ -200,7 +200,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center justify-between border-b-2 border-[#E5E5E5] pb-4">
             <div>
               <span className="text-xs font-extrabold uppercase tracking-wider text-[#58A700]">
-                {activeCourse.title}
+                {isHe && activeCourse.titleHe ? activeCourse.titleHe : activeCourse.title}
               </span>
               <h2 className="text-xl font-extrabold text-[#3C3C3C] mt-0.5">
                 {isHe ? 'מסלול הלימוד שלך' : 'Your Learning Path'}
@@ -252,7 +252,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {/* Title Label */}
                   <div className="mt-2 text-center max-w-[130px]">
                     <span className="text-xs font-extrabold text-[#3C3C3C] block leading-tight">
-                      {ls.title}
+                      {isHe && ls.titleHe ? ls.titleHe : ls.title}
                     </span>
                     <span className={`text-[10px] font-bold ${bubble.textColor}`}>
                       {isCompleted ? (isHe ? 'הושלם ✓' : 'Completed ✓') : isActive ? (isHe ? 'הנוכחי' : 'Current') : (isHe ? 'נעול' : 'Locked')}

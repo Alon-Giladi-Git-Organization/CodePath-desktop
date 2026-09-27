@@ -112,6 +112,7 @@ export interface ArchitectureChallenge {
 export interface LessonSummary {
   id: string;
   title: string;
+  titleHe?: string;
   durationMinutes: number;
   order: number;
   type: 'concept' | 'practice' | 'quiz';
@@ -120,21 +121,28 @@ export interface LessonSummary {
 export interface CourseModule {
   id: string;
   title: string;
+  titleHe?: string;
   description: string;
+  descriptionHe?: string;
   lessons: LessonSummary[];
 }
 
 export interface Course {
   id: string;
   title: string;
+  titleHe?: string;
   description: string;
+  descriptionHe?: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  difficultyHe?: string;
   category: 'Python' | 'JavaScript' | 'SQL' | 'Web' | 'Git' | 'Game Dev';
   totalLessons: number;
   estimatedHours: number;
   iconName: string;
   badge: 'Popular' | 'Practical' | 'Beginner' | 'Foundational';
+  badgeHe?: string;
   tags: string[];
+  tagsHe?: string[];
   modules: CourseModule[];
 }
 
@@ -142,26 +150,35 @@ export interface LineExplanation {
   lineNumber: number;
   code: string;
   explanation: string;
+  explanationHe?: string;
 }
 
 export interface Lesson {
   id: string;
   courseId: string;
   courseTitle: string;
+  courseTitleHe?: string;
   order: number;
   totalInCourse: number;
   title: string;
+  titleHe?: string;
   subtitle: string;
+  subtitleHe?: string;
   conceptTitle: string;
+  conceptTitleHe?: string;
   explanation: string[];
+  explanationHe?: string[];
   realWorldAnalogy?: string;
+  realWorldAnalogyHe?: string;
   codeSnippet: string;
   language: string;
   simulatedOutput?: string;
   lineBreakdown: LineExplanation[];
   importantTip: {
     title: string;
+    titleHe?: string;
     description: string;
+    descriptionHe?: string;
   };
   exerciseId: string;
   quizId: string;
@@ -172,13 +189,17 @@ export interface Lesson {
 export interface PracticeObjective {
   id: string;
   text: string;
+  textHe?: string;
 }
 
 export interface ErrorGuide {
   triggerPattern: string; // keyword or regex pattern match
   title: string;
+  titleHe?: string;
   explanation: string;
+  explanationHe?: string;
   hint: string;
+  hintHe?: string;
 }
 
 export interface Exercise {
@@ -186,14 +207,18 @@ export interface Exercise {
   lessonId: string;
   courseId: string;
   title: string;
+  titleHe?: string;
   language: string;
   difficulty: 'Beginner' | 'Intermediate';
+  difficultyHe?: string;
   taskDescription: string;
+  taskDescriptionHe?: string;
   requirements: PracticeObjective[];
   starterCode: string;
   solutionCode: string;
   expectedOutput: string;
   hints: string[];
+  hintsHe?: string[];
   errorGuides: ErrorGuide[];
   xpReward: number;
 }
@@ -201,13 +226,16 @@ export interface Exercise {
 export interface QuizOption {
   id: string;
   text: string;
+  textHe?: string;
   isCorrect: boolean;
   explanation: string;
+  explanationHe?: string;
 }
 
 export interface QuizQuestion {
   id: string;
   question: string;
+  questionHe?: string;
   codeSnippet?: string;
   options: QuizOption[];
   xpReward: number;
@@ -218,14 +246,18 @@ export interface Quiz {
   lessonId: string;
   courseId: string;
   title: string;
+  titleHe?: string;
   description: string;
+  descriptionHe?: string;
   questions: QuizQuestion[];
 }
 
 export interface Achievement {
   id: string;
   title: string;
+  titleHe?: string;
   description: string;
+  descriptionHe?: string;
   icon: string;
   category: 'streak' | 'lessons' | 'practice' | 'quiz' | 'mastery';
   progress: number;

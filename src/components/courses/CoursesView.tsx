@@ -4,6 +4,7 @@ import { COURSES } from '../../data/mockData';
 import { ProgressBar } from '../common/ProgressBar';
 import { CourseDetailModal } from './CourseDetailModal';
 import { CoseMascot } from '../common/CoseMascot';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   Play, 
   Terminal, 
@@ -25,20 +26,33 @@ interface CoursesViewProps {
 }
 
 export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) => {
+  const { t, language, isRtl } = useLanguage();
+  const isHe = language === 'he';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [inspectedCourse, setInspectedCourse] = useState<Course | null>(null);
 
-  const filterTags = ['All', 'Beginner', 'Practical', 'Popular', 'Interactive', 'Web', 'Data'];
+  const filterTags = [
+    { id: 'All', label: isHe ? 'הכל' : 'All' },
+    { id: 'Python', label: isHe ? 'פייתון' : 'Python' },
+    { id: 'JavaScript', label: isHe ? 'ג\'אווהסקריפט' : 'JavaScript' },
+    { id: 'SQL', label: isHe ? 'בסיסי נתונים' : 'SQL' },
+    { id: 'Web', label: isHe ? 'HTML & CSS' : 'Web' },
+    { id: 'Git', label: isHe ? 'גיט' : 'Git' },
+    { id: 'Game Dev', label: isHe ? 'משחקים' : 'Game Dev' },
+  ];
 
   const filteredCourses = COURSES.filter((course) => {
-    const matchesSearch = 
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const titleMatch = (course.title + ' ' + (course.titleHe || '')).toLowerCase().includes(searchQuery.toLowerCase());
+    const descMatch = (course.description + ' ' + (course.descriptionHe || '')).toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryMatch = course.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesSearch = titleMatch || descMatch || categoryMatch;
 
     const matchesTag = 
       selectedTag === 'All' || 
+      course.category === selectedTag ||
       course.tags.includes(selectedTag) || 
       course.badge === selectedTag || 
       course.difficulty === selectedTag;
@@ -72,48 +86,48 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#3C3C3C] tracking-tight">
-            Learning Paths & Curricula
+            {t('coursesTitle')}
           </h1>
           <p className="text-sm text-[#777777] font-semibold mt-1">
-            Choose your programming discipline with step-by-step interactive exercises and immediate feedback.
+            {t('coursesSubtitle')}
           </p>
         </div>
 
         {/* Search bar */}
         <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-[#AFAFAF] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className={`w-4 h-4 text-[#AFAFAF] absolute ${isRtl ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2`} />
           <input
             id="courses-search-input"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search language or skill..."
-            className="cose-input w-full pl-10 pr-4 text-xs sm:text-sm"
+            placeholder={isHe ? 'חיפוש שפה או מיומנות...' : 'Search language or skill...'}
+            className={`cose-input w-full ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} text-xs sm:text-sm`}
           />
         </div>
       </div>
 
       {/* Filter Tag Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <span className="text-xs font-extrabold uppercase text-[#AFAFAF] flex items-center gap-1 mr-1">
+        <span className="text-xs font-extrabold uppercase text-[#AFAFAF] flex items-center gap-1 shrink-0">
           <Filter className="w-3.5 h-3.5" />
-          FILTER:
+          {isHe ? 'סינון:' : 'FILTER:'}
         </span>
         {filterTags.map((tag) => (
           <button
-            key={tag}
-            id={`course-filter-${tag.toLowerCase()}`}
+            key={tag.id}
+            id={`course-filter-${tag.id.toLowerCase()}`}
             onClick={() => {
               soundFx.playClick();
-              setSelectedTag(tag);
+              setSelectedTag(tag.id);
             }}
             className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
-              selectedTag === tag
+              selectedTag === tag.id
                 ? 'bg-[#58CC02] text-white shadow-xs'
                 : 'bg-white text-[#777777] border-2 border-[#E5E5E5] hover:border-[#AFAFAF]'
             }`}
           >
-            {tag}
+            {tag.label}
           </button>
         ))}
       </div>
@@ -127,6 +141,10 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
             ? Math.round((12 / 28) * 100) 
             : Math.round((completedCount / (course.totalLessons || 1)) * 100);
 
+          const courseTitle = isHe && course.titleHe ? course.titleHe : course.title;
+          const courseDesc = isHe && course.descriptionHe ? course.descriptionHe : course.description;
+          const courseBadge = isHe && course.badgeHe ? course.badgeHe : course.badge;
+
           return (
             <div
               key={course.id}
@@ -138,38 +156,49 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
                   <div className="w-12 h-12 rounded-[14px] bg-[#F7F7F7] border-2 border-[#E5E5E5] flex items-center justify-center">
                     {getCourseIcon(course.iconName)}
                   </div>
-                  {course.badge && (
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FFFBE6] text-[#CC9900] border border-[#FFE885]">
-                      {course.badge}
+
+                  {courseBadge && (
+                    <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-[#EBF8FF] text-[#1CB0F6] border border-[#1CB0F6]/30">
+                      {courseBadge}
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <h2 className="text-lg font-extrabold text-[#3C3C3C] group-hover:text-[#58CC02] transition-colors">
-                    {course.title}
-                  </h2>
-                  <p className="text-xs text-[#777777] font-semibold mt-1 line-clamp-2 leading-relaxed">
-                    {course.description}
+                  <h3 className="text-lg font-extrabold text-[#3C3C3C] group-hover:text-[#58CC02] transition-colors">
+                    {courseTitle}
+                  </h3>
+                  <p className="text-xs text-[#777777] font-semibold mt-1.5 line-clamp-2 leading-relaxed">
+                    {courseDesc}
                   </p>
                 </div>
 
-                <div className="space-y-1.5 pt-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#777777]">
-                    <span>{course.totalLessons} Lessons • {course.estimatedHours} hrs</span>
-                    <span className="text-[#58A700]">{progressPercent}%</span>
+                {/* Progress bar */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between text-xs font-bold text-[#777777]">
+                    <span>{t('coursesLessonCount').replace('{count}', String(course.totalLessons))}</span>
+                    <span className="text-[#58A700] font-extrabold">{progressPercent}%</span>
                   </div>
-                  <ProgressBar value={progressPercent} size="sm" color="green" />
+                  <ProgressBar value={progressPercent} color="green" size="sm" />
                 </div>
               </div>
 
-              <div className="pt-5 mt-4 border-t-2 border-[#E5E5E5]">
+              {/* Action Buttons */}
+              <div className="pt-5 border-t-2 border-[#E5E5E5] flex items-center gap-2 mt-4">
+                <button
+                  onClick={() => setInspectedCourse(course)}
+                  className="btn-outline flex-1 text-xs font-extrabold !py-2.5"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>{t('coursesViewSyllabus')}</span>
+                </button>
+
                 <button
                   onClick={() => handleStartOrContinue(course)}
-                  className="w-full btn-primary text-xs font-extrabold !py-2.5"
+                  className="btn-primary flex-1 text-xs font-extrabold !py-2.5"
                 >
-                  <Play className="w-3.5 h-3.5 fill-white" />
-                  <span>{progressPercent > 0 ? 'Continue Path' : 'Start Path'}</span>
+                  <span>{progressPercent > 0 ? t('coursesContinueCourse') : t('coursesStartCourse')}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -177,16 +206,14 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
         })}
       </div>
 
-      {/* Syllabus Modal */}
+      {/* Course Detail Modal */}
       {inspectedCourse && (
         <CourseDetailModal
           course={inspectedCourse}
-          user={user}
+          isOpen={!!inspectedCourse}
           onClose={() => setInspectedCourse(null)}
-          onStartLesson={(lessonId) => {
-            setInspectedCourse(null);
-            onNavigate('lesson', { lessonId, courseId: inspectedCourse.id });
-          }}
+          user={user}
+          onNavigate={onNavigate}
         />
       )}
     </div>

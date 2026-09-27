@@ -5,6 +5,7 @@ import { ProgressBar } from '../common/ProgressBar';
 import { CodeBlock } from '../code/CodeBlock';
 import { InlineCode } from '../code/InlineCode';
 import { CoseMascot } from '../common/CoseMascot';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   Play, 
   CheckCircle2, 
@@ -34,7 +35,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   onCompleteLesson,
   onOpenMentor,
 }) => {
-  const lesson: Lesson = LESSONS[lessonId] || LESSONS['python-13'];
+  const { t, language, isRtl } = useLanguage();
+  const isHe = language === 'he';
+
+  const lesson: Lesson = LESSONS[lessonId] || LESSONS['python-13'] || Object.values(LESSONS)[0];
   const course = COURSES.find((c) => c.id === lesson.courseId) || COURSES[0];
 
   const [activeStepTab, setActiveStepTab] = useState<'concept' | 'example' | 'breakdown' | 'tip'>('concept');
@@ -51,11 +55,26 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   const tabs = [
-    { id: 'concept', label: '1. Concept', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'example', label: '2. Code Example', icon: <Code2 className="w-4 h-4" /> },
-    { id: 'breakdown', label: '3. Line by Line', icon: <Layers className="w-4 h-4" /> },
-    { id: 'tip', label: '4. Important Tip', icon: <Lightbulb className="w-4 h-4" /> },
+    { id: 'concept', label: t('lessonTabConcept'), icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'example', label: t('lessonTabExample'), icon: <Code2 className="w-4 h-4" /> },
+    { id: 'breakdown', label: t('lessonTabBreakdown'), icon: <Layers className="w-4 h-4" /> },
+    { id: 'tip', label: t('lessonTabTip'), icon: <Lightbulb className="w-4 h-4" /> },
   ] as const;
+
+  const lessonTitle = isHe && lesson.titleHe ? lesson.titleHe : lesson.title;
+  const lessonSub = isHe && lesson.subtitleHe ? lesson.subtitleHe : lesson.subtitle;
+  const conceptTitle = isHe && lesson.conceptTitleHe ? lesson.conceptTitleHe : lesson.conceptTitle;
+  const explanationParagraphs = isHe && lesson.explanationHe && lesson.explanationHe.length > 0 ? lesson.explanationHe : lesson.explanation;
+  const realWorldAnalogy = isHe && lesson.realWorldAnalogyHe ? lesson.realWorldAnalogyHe : lesson.realWorldAnalogy;
+  const courseTitle = isHe && course.titleHe ? course.titleHe : (lesson.courseTitle || course.title);
+
+  const tipTitle = isHe && lesson.importantTip?.titleHe 
+    ? lesson.importantTip.titleHe 
+    : (lesson.importantTip?.title || (typeof lesson.importantTip === 'string' ? lesson.importantTip : (isHe ? 'טיפ זהב' : 'Key Tip')));
+
+  const tipDesc = isHe && lesson.importantTip?.descriptionHe 
+    ? lesson.importantTip.descriptionHe 
+    : (lesson.importantTip?.description || (typeof lesson.importantTip === 'string' ? lesson.importantTip : ''));
 
   return (
     <div id="lesson-screen" className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -67,19 +86,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
               onClick={() => onNavigate('courses')}
               className="hover:text-[#58CC02] cursor-pointer transition-colors"
             >
-              {lesson.courseTitle}
+              {courseTitle}
             </span>
             <span>/</span>
-            <span>Module 3: Repetition</span>
+            <span>{isHe ? 'שיעור' : 'Lesson'} {lesson.order}</span>
           </div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
-              {lesson.title}
+              {lessonTitle}
             </h1>
             {isCompleted && (
               <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#DBF8C5] text-[#58A700] border border-[#58CC02]/40">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                COMPLETED
+                {t('lessonCompletedBadge')}
               </span>
             )}
           </div>
@@ -88,7 +107,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {/* Section Progress */}
         <div className="sm:text-right space-y-1.5 min-w-[180px]">
           <div className="flex items-center justify-between sm:justify-end gap-2 text-xs font-extrabold text-[#777777]">
-            <span>Lesson {lesson.order} of {lesson.totalInCourse}</span>
+            <span>{t('lessonProgressText').replace('{order}', String(lesson.order)).replace('{total}', String(lesson.totalInCourse || 28))}</span>
             <span className="text-[#58A700]">({sectionProgressPercent}%)</span>
           </div>
           <ProgressBar value={sectionProgressPercent} color="green" size="sm" />
@@ -126,46 +145,46 @@ export const LessonView: React.FC<LessonViewProps> = ({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
-                {lesson.conceptTitle}
+                {conceptTitle}
               </h2>
               <p className="text-sm text-[#777777] font-semibold mt-1">
-                {lesson.subtitle}
+                {lessonSub}
               </p>
             </div>
             <CoseMascot mood="thinking" size="md" />
           </div>
 
           <div className="space-y-4 text-[#3C3C3C] text-sm sm:text-base leading-relaxed font-medium">
-            {lesson.explanation.map((paragraph, idx) => (
+            {explanationParagraphs.map((paragraph, idx) => (
               <p key={idx}>{paragraph}</p>
             ))}
           </div>
 
-          {lesson.realWorldAnalogy && (
+          {realWorldAnalogy && (
             <div className="p-5 rounded-[16px] bg-[#FFFBE6] border-2 border-[#FFE885] space-y-2">
               <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#CC9900]">
                 <Lightbulb className="w-4 h-4 text-[#FFC800] fill-[#FFC800]" />
-                <span>Real-World Mental Model</span>
+                <span>{t('lessonMentalModel')}</span>
               </div>
               <p className="text-xs sm:text-sm text-[#3C3C3C] leading-relaxed font-semibold">
-                {lesson.realWorldAnalogy}
+                {realWorldAnalogy}
               </p>
             </div>
           )}
 
           <div className="flex items-center justify-between pt-4 border-t-2 border-[#E5E5E5]">
             <button
-              onClick={() => onOpenMentor(`Explain "${lesson.conceptTitle}" with another beginner-friendly example`)}
+              onClick={() => onOpenMentor(`Explain "${conceptTitle}" with another beginner-friendly example`)}
               className="btn-outline text-xs font-extrabold"
             >
               <Sparkles className="w-4 h-4 text-[#1CB0F6]" />
-              <span>Ask Mentor For Nudge</span>
+              <span>{t('lessonAskMentorNudge')}</span>
             </button>
             <button
               onClick={() => setActiveStepTab('example')}
               className="btn-primary"
             >
-              <span>Next: Code Example</span>
+              <span>{t('lessonNextExample')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -177,29 +196,29 @@ export const LessonView: React.FC<LessonViewProps> = ({
         <div className="cose-card p-6 sm:p-8 space-y-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
-              Interactive Code Example
+              {t('lessonInteractiveExampleTitle')}
             </h2>
             <p className="text-sm text-[#777777] font-semibold mt-1">
-              Read through the code snippet below. Notice how each token behaves.
+              {t('lessonInteractiveExampleSub')}
             </p>
           </div>
 
-          {/* Syntax Highlighted Code Block (LTR & Pre-wrap always) */}
+          {/* Syntax Highlighted Code Block (LTR & Pre-wrap always in dedicated box with copy button) */}
           <CodeBlock
             code={lesson.codeSnippet}
-            language="python"
+            language={lesson.language || 'python'}
             showLineNumbers={true}
           />
 
           <div className="p-4 rounded-[16px] bg-[#F7F7F7] border-2 border-[#E5E5E5] space-y-2">
             <span className="text-xs font-extrabold uppercase tracking-wider text-[#777777]">
-              Expected Output
+              {t('lessonExpectedOutput')}
             </span>
             <pre
               dir="ltr"
               className="font-mono text-xs text-[#3C3C3C] whitespace-pre-wrap break-all text-left bg-white p-3 rounded-[10px] border border-[#E5E5E5]"
             >
-              {lesson.simulatedOutput || 'T-minus 5\nT-minus 4\nT-minus 3\nT-minus 2\nT-minus 1\nBlast off!'}
+              {lesson.simulatedOutput || 'Cycle number: 1\nCycle number: 2\nCycle number: 3\nCycle number: 4\nCycle number: 5\nLoop finished successfully!'}
             </pre>
           </div>
 
@@ -209,13 +228,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
               className="btn-outline text-xs font-extrabold"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Concept</span>
+              <span>{t('lessonBackConcept')}</span>
             </button>
             <button
               onClick={() => setActiveStepTab('breakdown')}
               className="btn-primary"
             >
-              <span>Next: Line Breakdown</span>
+              <span>{t('lessonNextBreakdown')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -227,17 +246,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
         <div className="cose-card p-6 sm:p-8 space-y-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
-              Line-by-Line Breakdown
+              {t('lessonLineBreakdownTitle')}
             </h2>
             <p className="text-sm text-[#777777] font-semibold mt-1">
-              Click any line in the code block or list below to see its exact mechanics.
+              {t('lessonLineBreakdownSub')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <CodeBlock
               code={lesson.codeSnippet}
-              language="python"
+              language={lesson.language || 'python'}
               selectedLine={selectedLine}
               onLineClick={(num) => setSelectedLine(num)}
             />
@@ -246,6 +265,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <div className="space-y-3">
               {lesson.lineBreakdown.map((item) => {
                 const isSelected = selectedLine === item.lineNumber;
+                const explanationText = isHe && item.explanationHe ? item.explanationHe : item.explanation;
+
                 return (
                   <div
                     key={item.lineNumber}
@@ -260,13 +281,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="w-5 h-5 rounded-full bg-[#58CC02] text-white font-extrabold text-[11px] flex items-center justify-center">
+                      <span className="w-5 h-5 rounded-full bg-[#58CC02] text-white font-extrabold text-[11px] flex items-center justify-center shrink-0">
                         {item.lineNumber}
                       </span>
                       <InlineCode>{item.code}</InlineCode>
                     </div>
                     <p className="text-xs text-[#3C3C3C] font-semibold leading-relaxed">
-                      {item.explanation}
+                      {explanationText}
                     </p>
                   </div>
                 );
@@ -280,13 +301,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
               className="btn-outline text-xs font-extrabold"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Code</span>
+              <span>{t('lessonBackCode')}</span>
             </button>
             <button
               onClick={() => setActiveStepTab('tip')}
               className="btn-primary"
             >
-              <span>Next: Golden Tip</span>
+              <span>{t('lessonNextTip')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -300,31 +321,31 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <CoseMascot mood="celebrating" size="md" />
             <div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#3C3C3C]">
-                {lesson.importantTip?.title || 'Pro-Coder Rule & Common Trap'}
+                {tipTitle}
               </h2>
               <p className="text-sm text-[#777777] font-semibold mt-1">
-                Keep this in your memory bank for live coding sessions.
+                {isHe ? 'שמור עיקרון זה בזכרון עבור משימות תכנות מעשיות.' : 'Keep this in your memory bank for live coding sessions.'}
               </p>
             </div>
           </div>
 
           <div className="p-6 rounded-[16px] bg-[#FFF5E6] border-2 border-[#FFD9A6] space-y-2">
             <span className="text-xs font-extrabold uppercase tracking-wider text-[#CC7A00]">
-              Key Takeaway
+              {t('lessonKeyTakeaway')}
             </span>
             <p className="text-sm sm:text-base text-[#3C3C3C] font-bold leading-relaxed">
-              {lesson.importantTip?.description || (typeof lesson.importantTip === 'string' ? lesson.importantTip : '')}
+              {tipDesc}
             </p>
           </div>
 
           {/* Action Row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t-2 border-[#E5E5E5]">
             <button
-              onClick={() => onNavigate('practice', { exerciseId: 'ex-python-while-1' })}
+              onClick={() => onNavigate('practice', { exerciseId: lesson.exerciseId || 'ex-python-while-1' })}
               className="btn-secondary w-full sm:w-auto"
             >
               <Play className="w-4 h-4 fill-white" />
-              <span>Jump Straight to Live Practice</span>
+              <span>{t('lessonJumpPractice')}</span>
             </button>
 
             <button
@@ -333,7 +354,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               className="btn-primary w-full sm:w-auto"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Mark Lesson Complete (+50 XP)</span>
+              <span>{t('lessonMarkComplete')}</span>
             </button>
           </div>
         </div>

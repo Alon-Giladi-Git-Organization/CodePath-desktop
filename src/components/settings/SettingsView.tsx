@@ -99,7 +99,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 className="cose-input w-full text-sm"
-                placeholder="Your display name"
+                placeholder={isHe ? 'שם התצוגה שלך' : 'Your display name'}
               />
             </div>
 
@@ -139,7 +139,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       : 'bg-white border-[#E5E5E5] text-[#777777] hover:border-[#AFAFAF]'
                   }`}
                 >
-                  {mins} min/day
+                  {mins} {isHe ? 'דק׳/יום' : 'min/day'}
                 </button>
               ))}
             </div>
@@ -196,10 +196,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-extrabold text-sm text-[#3C3C3C]">
-                  Sound Effects
+                  {t('settingsSoundEffects')}
                 </h4>
                 <p className="text-xs text-[#777777] font-semibold">
-                  Tactile feedback on clicks, successes, and errors.
+                  {isHe ? 'משוב קולי מדויק בלחיצות, הצלחות ובדיקות קוד.' : 'Tactile feedback on clicks, successes, and errors.'}
                 </p>
               </div>
               <button
@@ -216,10 +216,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="space-y-3 pt-3 border-t-2 border-[#E5E5E5]">
             <div>
               <h4 className="font-extrabold text-sm text-[#FF4B4B]">
-                Danger Zone
+                {isHe ? 'איפוס נתונים' : 'Danger Zone'}
               </h4>
               <p className="text-xs text-[#777777] font-semibold">
-                Reset your lesson progress and experience points.
+                {t('settingsResetConfirm')}
               </p>
             </div>
             <button
@@ -228,7 +228,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               className="btn-danger text-xs font-extrabold !py-2 !px-3"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset All Learning Data</span>
+              <span>{t('settingsResetProgress')}</span>
             </button>
           </div>
         </div>
@@ -238,25 +238,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <Modal
         isOpen={isConfirmResetOpen}
         onClose={() => setIsConfirmResetOpen(false)}
-        title="Reset All Progress?"
-        subtitle="This will clear your completed lessons and streak."
+        title={t('settingsResetProgress')}
+        subtitle={t('settingsResetConfirm')}
       >
         <div className="space-y-4">
           <p className="text-xs text-[#777777] font-semibold">
-            Are you sure you want to reset your account progress? This action cannot be undone.
+            {t('settingsResetConfirm')}
           </p>
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setIsConfirmResetOpen(false)}
               className="btn-outline text-xs"
             >
-              Cancel
+              {t('buttonCancel')}
             </button>
             <button
               onClick={handleConfirmReset}
               className="btn-danger text-xs"
             >
-              Confirm Reset
+              {t('settingsResetProgress')}
             </button>
           </div>
         </div>
