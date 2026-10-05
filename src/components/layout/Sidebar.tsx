@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavScreen, UserProfile } from '../../types';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { useAuth } from '../../firebase/AuthContext';
 import { 
   LayoutDashboard, 
   Compass, 
@@ -8,15 +9,13 @@ import {
   Trophy, 
   Settings, 
   Sparkles, 
-  Flame, 
-  Zap, 
   ChevronRight,
   ChevronLeft,
   Layers,
   Award,
-  Code2,
-  Brain,
-  Puzzle
+  Cloud,
+  CloudCheck,
+  LogIn
 } from 'lucide-react';
 import { CoseMascot } from '../common/CoseMascot';
 
@@ -38,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
 }) => {
   const { t, language, isRtl } = useLanguage();
+  const { currentUser, signInWithGoogle } = useAuth();
 
   const navItems: { screen: NavScreen; label: string; icon: React.ReactNode; badge?: string }[] = [
     {
@@ -95,6 +95,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     : isRtl
     ? 'translate-x-full'
     : '-translate-x-full';
+
+  const displayName = currentUser?.displayName || user.name;
+  const displayAvatar = currentUser?.photoURL || user.avatar;
 
   return (
     <>
@@ -200,33 +203,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* User Profile Card at Bottom */}
         <div className="p-3 border-t-2 border-[#E5E5E5]">
-          <div
-            id="sidebar-user-profile"
-            onClick={() => handleNavClick('settings')}
-            className="flex items-center gap-3 p-2 rounded-[14px] hover:bg-[#F7F7F7] border-2 border-transparent hover:border-[#E5E5E5] transition-all cursor-pointer"
-          >
-            <div className="relative">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-10 h-10 rounded-full object-cover border-2 border-[#58CC02]"
-              />
-              <span className={`absolute bottom-0 ${isRtl ? 'left-0' : 'right-0'} w-3 h-3 rounded-full bg-[#58CC02] border-2 border-white`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-extrabold text-[#3C3C3C] truncate">
-                  {user.name}
-                </span>
-                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-[#FFC800]/20 text-[#CC9900]">
-                  Lvl {user.level}
-                </span>
+          {currentUser ? (
+            <div
+              id="sidebar-user-profile"
+              onClick={() => handleNavClick('settings')}
+              className="flex items-center gap-3 p-2 rounded-[14px] hover:bg-[#F7F7F7] border-2 border-transparent hover:border-[#E5E5E5] transition-all cursor-pointer"
+            >
+              <div className="relative">
+                <img
+                  src={displayAvatar}
+                  alt={displayName}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-[#58CC02]"
+                />
+                <span className={`absolute bottom-0 ${isRtl ? 'left-0' : 'right-0'} w-3 h-3 rounded-full bg-[#58CC02] border-2 border-white`} />
               </div>
-              <p className="text-xs text-[#777777] truncate font-semibold">
-                {user.xp.toLocaleString()} XP
-              </p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-extrabold text-[#3C3C3C] truncate">
+                    {displayName}
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-[#FFC800]/20 text-[#CC9900]">
+                    Lvl {user.level}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-[#58A700] font-semibold">
+                  <Cloud className="w-3 h-3" />
+                  <span className="truncate">{language === 'he' ? 'מסונכרן לענן' : 'Firestore Synced'}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <button
+              id="sidebar-signin-btn"
+              onClick={() => signInWithGoogle()}
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-[14px] bg-[#F7F7F7] hover:bg-[#EBF7E3] border-2 border-[#E5E5E5] hover:border-[#58CC02] text-[#3C3C3C] text-xs font-extrabold transition-all cursor-pointer"
+            >
+              <LogIn className="w-4 h-4 text-[#58CC02]" />
+              <span>{language === 'he' ? 'התחבר לחשבון לסנכרון' : 'Sign in to sync progress'}</span>
+            </button>
+          )}
         </div>
       </aside>
     </>

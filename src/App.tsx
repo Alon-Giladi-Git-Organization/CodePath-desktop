@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLearningState } from './hooks/useLearningState';
 import { useLanguage } from './i18n/LanguageContext';
 import { useAuth } from './firebase/AuthContext';
-import { syncUserProfileToFirestore } from './firebase/service';
+import { 
+  syncUserProfileToFirestore, 
+  getUserProfileFromFirestore, 
+  subscribeToUserProfile 
+} from './firebase/service';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { BottomNav } from './components/layout/BottomNav';
@@ -37,29 +41,133 @@ export default function App() {
     recordQuizScore,
     resetAllData,
     toasts,
+    addToast,
     removeToast,
   } = useLearningState();
 
-  const { isRtl } = useLanguage();
-  const { effectiveUserId, currentUser } = useAuth();
+  const { isRtl, language } = useLanguage();
+  const { effectiveUserId, currentUser, authError, clearAuthError } = useAuth();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMentorOpen, setIsMentorOpen] = useState(false);
   const [mentorInitialPrompt, setMentorInitialPrompt] = useState<string | undefined>(undefined);
+  const isInitialRemoteLoadDone = useRef(false);
 
-  // Sync state to Firestore on updates
+  // Notify on Auth Error
   useEffect(() => {
-    if (effectiveUserId) {
-      syncUserProfileToFirestore(effectiveUserId, {
+    if (authError) {
+      addToast({
+        type: 'error',
+        title: language === 'he' ? 'שגיאת התחברות' : 'Sign-In Error',
+        message: authError,
+      });
+      clearAuthError();
+    }
+  }, [authError, addToast, language, clearAuthError]);
+
+  // Load and Subscribe to Firestore User Profile when Authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      isInitialRemoteLoadDone.current = false;
+      return;
+    }
+
+    let isMounted = true;
+
+    // 1. Initial Remote Fetch from Firestore
+    async function loadRemoteProfile() {
+      try {
+        const remoteData = await getUserProfileFromFirestore(currentUser!.uid);
+        if (!isMounted) return;
+
+        if (remoteData) {
+          console.info('[App] Loaded remote profile from Firestore:', remoteData);
+          setUser((prev) => ({
+            ...prev,
+            ...remoteData,
+            name: currentUser!.displayName || remoteData.name || prev.name,
+            email: currentUser!.email || remoteData.email || prev.email,
+            avatar: currentUser!.photoURL || remoteData.avatar || prev.avatar,
+            completedLessons: remoteData.completedLessons || prev.completedLessons || [],
+            completedExercises: remoteData.completedExercises || prev.completedExercises || [],
+            completedArchitectureChallenges: remoteData.completedArchitectureChallenges || prev.completedArchitectureChallenges || [],
+            unlockedAchievements: remoteData.unlockedAchievements || prev.unlockedAchievements || [],
+            quizScores: remoteData.quizScores || prev.quizScores || {},
+          }));
+          addToast({
+            type: 'success',
+            title: language === 'he' ? 'החשבון סונכרן בהצלחה! ☁️' : 'Profile Synced! ☁️',
+            message: language === 'he' ? `ברוך שובך, ${currentUser!.displayName || 'לומד'}` : `Welcome back, ${currentUser!.displayName || 'Learner'}`,
+          });
+        } else {
+          // If no remote profile exists yet in Firestore, immediately create it!
+          console.info('[App] Creating new Firestore document for user:', currentUser!.uid);
+          const initialProfile = {
+            ...user,
+            name: currentUser!.displayName || user.name,
+            email: currentUser!.email || user.email,
+            avatar: currentUser!.photoURL || user.avatar,
+          };
+          setUser(initialProfile);
+          await syncUserProfileToFirestore(currentUser!.uid, initialProfile);
+          addToast({
+            type: 'success',
+            title: language === 'he' ? 'חשבון חובר ל-Firestore 🚀' : 'Connected to Firestore 🚀',
+            message: language === 'he' ? 'ההתקדמות שלך תישמר בענן בזמן אמת' : 'Your progress is now synced to the cloud',
+          });
+        }
+      } catch (err) {
+        console.error('[App] Failed to load remote profile:', err);
+      } finally {
+        isInitialRemoteLoadDone.current = true;
+      }
+    }
+
+    loadRemoteProfile();
+
+    // 2. Real-time Subscription (Cross-device sync Desktop <-> Mobile)
+    const unsubscribe = subscribeToUserProfile(currentUser.uid, (remoteProfile) => {
+      if (!isMounted) return;
+      console.info('[App] Realtime profile update received from Firestore');
+      setUser((prev) => {
+        // Only update if remote data has higher XP or different progress
+        return {
+          ...prev,
+          ...remoteProfile,
+          name: currentUser.displayName || remoteProfile.name || prev.name,
+          email: currentUser.email || remoteProfile.email || prev.email,
+          avatar: currentUser.photoURL || remoteProfile.avatar || prev.avatar,
+        };
+      });
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [currentUser]);
+
+  // Sync state mutations to Firestore (debounced / on learning activity)
+  useEffect(() => {
+    if (currentUser && isInitialRemoteLoadDone.current) {
+      syncUserProfileToFirestore(currentUser.uid, {
         ...user,
-        name: currentUser?.displayName || user.name,
-        email: currentUser?.email || user.email,
-        avatar: currentUser?.photoURL || user.avatar,
+        name: currentUser.displayName || user.name,
+        email: currentUser.email || user.email,
+        avatar: currentUser.photoURL || user.avatar,
       }).catch((err) => {
-        console.warn('Background sync:', err);
+        console.warn('[App] Background Firestore sync failed:', err);
       });
     }
-  }, [user.xp, user.streak, user.completedLessons, effectiveUserId, currentUser]);
+  }, [
+    user.xp, 
+    user.streak, 
+    user.level, 
+    user.completedLessons.length, 
+    user.completedExercises.length, 
+    user.completedArchitectureChallenges?.length,
+    currentUser
+  ]);
 
   const handleOpenMentor = (initialPrompt?: string) => {
     setMentorInitialPrompt(initialPrompt);

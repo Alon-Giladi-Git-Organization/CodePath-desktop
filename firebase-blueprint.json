@@ -2,7 +2,7 @@
   "entities": {
     "userProfile": {
       "title": "UserProfile",
-      "description": "User profile with gamified progress, learning streak, and preferences",
+      "description": "User profile with gamified progress, learning streak, course history, and preferences",
       "type": "object",
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
@@ -10,65 +10,31 @@
         "email": { "type": "string", "maxLength": 150 },
         "avatar": { "type": "string", "maxLength": 500 },
         "xp": { "type": "number" },
-        "level": { "type": "number" },
+        "level": { "type": "string", "maxLength": 50 },
         "streak": { "type": "number" },
+        "streakActiveToday": { "type": "boolean" },
+        "totalHours": { "type": "number" },
+        "language": { "type": "string", "maxLength": 10 },
+        "activeCourseId": { "type": "string", "maxLength": 100 },
+        "activeLessonId": { "type": "string", "maxLength": 100 },
+        "activeExerciseId": { "type": "string", "maxLength": 100 },
+        "activeQuizId": { "type": "string", "maxLength": 100 },
+        "completedLessons": { "type": "array" },
+        "completedExercises": { "type": "array" },
+        "completedArchitectureChallenges": { "type": "array" },
+        "quizScores": { "type": "object" },
+        "unlockedAchievements": { "type": "array" },
         "dailyGoalMinutes": { "type": "number" },
         "editorFontSize": { "type": "string", "maxLength": 10 },
         "soundEnabled": { "type": "boolean" },
-        "completedLessons": { "type": "array" },
-        "completedExercises": { "type": "array" },
-        "quizScores": { "type": "object" },
-        "unlockedAchievements": { "type": "array" },
-        "completedArchitectureChallenges": { "type": "array" },
-        "createdAt": { "type": "string" },
-        "updatedAt": { "type": "string" }
+        "createdAt": { "type": "string", "maxLength": 100 },
+        "updatedAt": { "type": "string", "maxLength": 100 }
       },
       "required": ["id", "name", "email", "xp", "level", "streak"]
     },
-    "memoryPalace": {
-      "title": "MemoryPalace",
-      "description": "A spatial memory palace with loci and mnemonic associations",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "maxLength": 128 },
-        "userId": { "type": "string", "maxLength": 128 },
-        "title": { "type": "string", "maxLength": 120 },
-        "description": { "type": "string", "maxLength": 1000 },
-        "category": { "type": "string", "maxLength": 50 },
-        "imageUrl": { "type": "string", "maxLength": 500 },
-        "loci": { "type": "array" },
-        "isDefault": { "type": "boolean" },
-        "totalRecalls": { "type": "number" },
-        "bestAccuracy": { "type": "number" },
-        "lastPracticedAt": { "type": "string" },
-        "createdAt": { "type": "string" },
-        "updatedAt": { "type": "string" }
-      },
-      "required": ["id", "userId", "title", "loci"]
-    },
-    "memoryPracticeSession": {
-      "title": "MemoryPracticeSession",
-      "description": "Log of memory training attempt with accuracy and AI recommendations",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "maxLength": 128 },
-        "userId": { "type": "string", "maxLength": 128 },
-        "palaceId": { "type": "string", "maxLength": 128 },
-        "exerciseType": { "type": "string", "maxLength": 50 },
-        "score": { "type": "number" },
-        "accuracy": { "type": "number" },
-        "itemsAttempted": { "type": "number" },
-        "itemsCorrect": { "type": "number" },
-        "durationSeconds": { "type": "number" },
-        "aiFeedback": { "type": "string", "maxLength": 2000 },
-        "recommendations": { "type": "array" },
-        "createdAt": { "type": "string" }
-      },
-      "required": ["id", "userId", "exerciseType", "score", "accuracy"]
-    },
     "leaderboardEntry": {
       "title": "LeaderboardEntry",
-      "description": "Public ranking card displaying XP, streak, and tier",
+      "description": "Public ranking card displaying XP, streak, tier, and badges",
       "type": "object",
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
@@ -76,11 +42,10 @@
         "displayName": { "type": "string", "maxLength": 100 },
         "photoURL": { "type": "string", "maxLength": 500 },
         "xp": { "type": "number" },
-        "level": { "type": "number" },
+        "level": { "type": "string", "maxLength": 50 },
         "streak": { "type": "number" },
         "badgesCount": { "type": "number" },
-        "palacesCount": { "type": "number" },
-        "updatedAt": { "type": "string" }
+        "updatedAt": { "type": "string", "maxLength": 100 }
       },
       "required": ["id", "userId", "displayName", "xp", "level", "streak"]
     }
@@ -89,14 +54,6 @@
     "/users/{userId}": {
       "schema": "userProfile",
       "description": "Private user account profile and learning records"
-    },
-    "/users/{userId}/palaces/{palaceId}": {
-      "schema": "memoryPalace",
-      "description": "User memory palaces with locations and mnemonics"
-    },
-    "/users/{userId}/sessions/{sessionId}": {
-      "schema": "memoryPracticeSession",
-      "description": "Individual recall session results and AI coach feedback"
     },
     "/leaderboard/{userId}": {
       "schema": "leaderboardEntry",

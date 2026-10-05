@@ -21,8 +21,10 @@ const LOCAL_STORAGE_PROFILE_KEY = 'codepath_local_profile';
 /**
  * Checks if the current request is for an authenticated Firebase user
  */
-function isUserAuthenticated(userId: string): boolean {
-  return !!auth.currentUser && auth.currentUser.uid === userId;
+export function isUserAuthenticated(userId?: string): boolean {
+  if (!auth.currentUser) return false;
+  if (!userId) return true;
+  return auth.currentUser.uid === userId;
 }
 
 /**
@@ -32,26 +34,35 @@ export async function syncUserProfileToFirestore(
   userId: string,
   profile: Partial<UserProfile> & { name: string; email: string; xp: number; level: string | number; streak: number }
 ): Promise<void> {
-  const payload = {
+  const levelStr = String(profile.level || 'Beginner+');
+  
+  const payload: Record<string, unknown> = {
     id: userId,
     name: profile.name || 'Anonymous Learner',
     email: profile.email || 'user@example.com',
     avatar: profile.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    xp: profile.xp ?? 0,
-    level: typeof profile.level === 'number' ? profile.level : parseInt(String(profile.level).replace(/\D/g, '')) || 1,
-    streak: profile.streak ?? 0,
-    dailyGoalMinutes: profile.dailyGoalMinutes ?? 15,
+    xp: Math.max(0, Number(profile.xp) || 0),
+    level: levelStr,
+    streak: Math.max(0, Number(profile.streak) || 0),
+    streakActiveToday: Boolean(profile.streakActiveToday ?? true),
+    totalHours: Number(profile.totalHours) || 0,
+    language: profile.language || 'en',
+    activeCourseId: profile.activeCourseId || 'python-beginners',
+    activeLessonId: profile.activeLessonId || 'python-1',
+    activeExerciseId: profile.activeExerciseId || 'ex-python-intro',
+    activeQuizId: profile.activeQuizId || 'quiz-python-basics',
+    dailyGoalMinutes: Math.min(180, Math.max(0, Number(profile.dailyGoalMinutes) || 15)),
     editorFontSize: profile.editorFontSize || 'md',
-    soundEnabled: profile.soundEnabled ?? true,
-    completedLessons: profile.completedLessons || [],
-    completedExercises: profile.completedExercises || [],
-    quizScores: profile.quizScores || {},
-    unlockedAchievements: profile.unlockedAchievements || [],
-    completedArchitectureChallenges: profile.completedArchitectureChallenges || [],
+    soundEnabled: Boolean(profile.soundEnabled ?? true),
+    completedLessons: Array.isArray(profile.completedLessons) ? profile.completedLessons : [],
+    completedExercises: Array.isArray(profile.completedExercises) ? profile.completedExercises : [],
+    completedArchitectureChallenges: Array.isArray(profile.completedArchitectureChallenges) ? profile.completedArchitectureChallenges : [],
+    quizScores: profile.quizScores && typeof profile.quizScores === 'object' ? profile.quizScores : {},
+    unlockedAchievements: Array.isArray(profile.unlockedAchievements) ? profile.unlockedAchievements : [],
     updatedAt: new Date().toISOString(),
   };
 
-  // Always keep a local copy for resilience
+  // Keep a local backup in localStorage
   try {
     localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(payload));
   } catch {
@@ -74,15 +85,16 @@ export async function syncUserProfileToFirestore(
     const lbPayload = {
       id: userId,
       userId: userId,
-      displayName: payload.name,
-      photoURL: payload.avatar,
+      displayName: String(payload.name).substring(0, 100),
+      photoURL: String(payload.avatar).substring(0, 500),
       xp: payload.xp,
-      level: payload.level,
+      level: levelStr,
       streak: payload.streak,
-      badgesCount: (payload.unlockedAchievements || []).length,
+      badgesCount: (payload.unlockedAchievements as string[] || []).length,
       updatedAt: new Date().toISOString(),
     };
     await setDoc(lbRef, lbPayload, { merge: true });
+    console.info(`[Firestore] Successfully synced profile and leaderboard for UID: ${userId}`);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -106,8 +118,12 @@ export async function getUserProfileFromFirestore(userId: string): Promise<UserP
 
   try {
     const snap = await getDoc(userRef);
-    if (!snap.exists()) return null;
-    return snap.data() as UserProfile;
+    if (!snap.exists()) {
+      return null;
+    }
+    const data = snap.data() as UserProfile;
+    console.info(`[Firestore] Retrieved profile for UID: ${userId}, XP: ${data.xp}, Lessons: ${data.completedLessons?.length || 0}`);
+    return data;
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, path);
     return null;
@@ -115,19 +131,13 @@ export async function getUserProfileFromFirestore(userId: string): Promise<UserP
 }
 
 /**
- * Subscribes to real-time profile updates for the current user
+ * Subscribes to real-time profile updates for the current user across devices (Desktop <-> Mobile)
  */
 export function subscribeToUserProfile(
   userId: string,
   onUpdate: (profile: UserProfile) => void
 ): () => void {
   if (!isUserAuthenticated(userId)) {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_PROFILE_KEY);
-      if (saved) onUpdate(JSON.parse(saved));
-    } catch {
-      // fallback
-    }
     return () => {};
   }
 
@@ -138,7 +148,8 @@ export function subscribeToUserProfile(
     userRef,
     (snap) => {
       if (snap.exists()) {
-        onUpdate(snap.data() as UserProfile);
+        const data = snap.data() as UserProfile;
+        onUpdate(data);
       }
     },
     (error) => {
@@ -176,7 +187,7 @@ export async function getLeaderboardFromFirestore(maxEntries: number = 25): Prom
       displayName: 'Alex Chen (Staff Architect)',
       photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
       xp: 14250,
-      level: 28,
+      level: 'Advanced',
       streak: 42,
       badgesCount: 16,
       rank: 1,
@@ -187,7 +198,7 @@ export async function getLeaderboardFromFirestore(maxEntries: number = 25): Prom
       displayName: 'Maya Lin (Senior Engineer)',
       photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
       xp: 11800,
-      level: 22,
+      level: 'Intermediate+',
       streak: 28,
       badgesCount: 12,
       rank: 2,
@@ -198,7 +209,7 @@ export async function getLeaderboardFromFirestore(maxEntries: number = 25): Prom
       displayName: 'David K. (System Specialist)',
       photoURL: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80',
       xp: 8650,
-      level: 17,
+      level: 'Intermediate',
       streak: 19,
       badgesCount: 9,
       rank: 3,

@@ -2,12 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Pillar 1: Default-deny catch-all
+    // Default-deny catch-all
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Common Security Primitives
+    // Common Security Helpers
     function isSignedIn() {
       return request.auth != null;
     }
@@ -28,100 +28,65 @@ service cloud.firestore {
       return resource.data;
     }
 
-    // Validation Blueprint: UserProfile
+    // Validation Helper: UserProfile
     function isValidUserProfile(data) {
       return data.keys().hasAll(['id', 'name', 'email', 'xp', 'level', 'streak']) &&
-        data.id is string && data.id.size() <= 128 &&
+        data.id is string && data.id.size() <= 128 && data.id == request.auth.uid &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
         data.email is string && data.email.size() <= 150 &&
         data.xp is number && data.xp >= 0 &&
-        data.level is number && data.level >= 1 &&
+        ((data.level is string && data.level.size() <= 50) || (data.level is number && data.level >= 1)) &&
         data.streak is number && data.streak >= 0 &&
         (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 500)) &&
         (!('dailyGoalMinutes' in data) || (data.dailyGoalMinutes is number && data.dailyGoalMinutes >= 0 && data.dailyGoalMinutes <= 180)) &&
         (!('editorFontSize' in data) || (data.editorFontSize is string && data.editorFontSize.size() <= 10)) &&
         (!('soundEnabled' in data) || (data.soundEnabled is bool)) &&
+        (!('streakActiveToday' in data) || (data.streakActiveToday is bool)) &&
+        (!('totalHours' in data) || (data.totalHours is number && data.totalHours >= 0)) &&
+        (!('language' in data) || (data.language is string && data.language.size() <= 10)) &&
+        (!('activeCourseId' in data) || (data.activeCourseId is string && data.activeCourseId.size() <= 100)) &&
+        (!('activeLessonId' in data) || (data.activeLessonId is string && data.activeLessonId.size() <= 100)) &&
+        (!('activeExerciseId' in data) || (data.activeExerciseId is string && data.activeExerciseId.size() <= 100)) &&
+        (!('activeQuizId' in data) || (data.activeQuizId is string && data.activeQuizId.size() <= 100)) &&
         (!('completedLessons' in data) || (data.completedLessons is list && data.completedLessons.size() <= 500)) &&
         (!('completedExercises' in data) || (data.completedExercises is list && data.completedExercises.size() <= 500)) &&
+        (!('completedArchitectureChallenges' in data) || (data.completedArchitectureChallenges is list && data.completedArchitectureChallenges.size() <= 100)) &&
         (!('unlockedAchievements' in data) || (data.unlockedAchievements is list && data.unlockedAchievements.size() <= 100)) &&
-        (!('completedArchitectureChallenges' in data) || (data.completedArchitectureChallenges is list && data.completedArchitectureChallenges.size() <= 100));
+        (!('quizScores' in data) || (data.quizScores is map)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
     }
 
-    // Validation Blueprint: MemoryPalace
-    function isValidMemoryPalace(data) {
-      return data.keys().hasAll(['id', 'userId', 'title', 'loci']) &&
-        data.id is string && data.id.size() <= 128 &&
-        data.userId is string && data.userId == request.auth.uid &&
-        data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
-        data.loci is list && data.loci.size() <= 100 &&
-        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
-        (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
-        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 500)) &&
-        (!('totalRecalls' in data) || (data.totalRecalls is number && data.totalRecalls >= 0)) &&
-        (!('bestAccuracy' in data) || (data.bestAccuracy is number && data.bestAccuracy >= 0 && data.bestAccuracy <= 100)) &&
-        (!('isDefault' in data) || (data.isDefault is bool));
-    }
-
-    // Validation Blueprint: MemoryPracticeSession
-    function isValidPracticeSession(data) {
-      return data.keys().hasAll(['id', 'userId', 'exerciseType', 'score', 'accuracy']) &&
-        data.id is string && data.id.size() <= 128 &&
-        data.userId is string && data.userId == request.auth.uid &&
-        data.exerciseType is string && data.exerciseType.size() <= 50 &&
-        data.score is number && data.score >= 0 &&
-        data.accuracy is number && data.accuracy >= 0 && data.accuracy <= 100 &&
-        (!('palaceId' in data) || (data.palaceId is string && data.palaceId.size() <= 128)) &&
-        (!('itemsAttempted' in data) || (data.itemsAttempted is number && data.itemsAttempted >= 0)) &&
-        (!('itemsCorrect' in data) || (data.itemsCorrect is number && data.itemsCorrect >= 0)) &&
-        (!('durationSeconds' in data) || (data.durationSeconds is number && data.durationSeconds >= 0)) &&
-        (!('aiFeedback' in data) || (data.aiFeedback is string && data.aiFeedback.size() <= 2000)) &&
-        (!('recommendations' in data) || (data.recommendations is list && data.recommendations.size() <= 20));
-    }
-
-    // Validation Blueprint: LeaderboardEntry
+    // Validation Helper: LeaderboardEntry
     function isValidLeaderboardEntry(data) {
       return data.keys().hasAll(['id', 'userId', 'displayName', 'xp', 'level', 'streak']) &&
         data.id is string && data.id == request.auth.uid &&
         data.userId is string && data.userId == request.auth.uid &&
         data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
         data.xp is number && data.xp >= 0 &&
-        data.level is number && data.level >= 1 &&
+        ((data.level is string && data.level.size() <= 50) || (data.level is number && data.level >= 1)) &&
         data.streak is number && data.streak >= 0 &&
         (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
         (!('badgesCount' in data) || (data.badgesCount is number && data.badgesCount >= 0)) &&
-        (!('palacesCount' in data) || (data.palacesCount is number && data.palacesCount >= 0));
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
     }
 
-    // Rule Match: User Profile
+    // Collection: User Profile
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
       allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) &&
                     incoming().id == existing().id;
       allow delete: if isOwner(userId);
-
-      // Subcollection: Memory Palaces
-      match /palaces/{palaceId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(palaceId) && isValidMemoryPalace(incoming());
-        allow update: if isOwner(userId) && isValidId(palaceId) && isValidMemoryPalace(incoming()) &&
-                      incoming().id == existing().id &&
-                      incoming().userId == existing().userId;
-        allow delete: if isOwner(userId);
-      }
-
-      // Subcollection: Training Sessions
-      match /sessions/{sessionId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(sessionId) && isValidPracticeSession(incoming());
-        allow delete: if isOwner(userId);
-      }
     }
 
-    // Rule Match: Public Leaderboard
+    // Collection: Public Leaderboard
     match /leaderboard/{userId} {
       allow get, list: if true;
-      allow create, update: if isOwner(userId) && isValidId(userId) && isValidLeaderboardEntry(incoming());
+      allow create: if isOwner(userId) && isValidId(userId) && isValidLeaderboardEntry(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidLeaderboardEntry(incoming()) &&
+                    incoming().id == existing().id &&
+                    incoming().userId == existing().userId;
       allow delete: if isOwner(userId);
     }
   }
