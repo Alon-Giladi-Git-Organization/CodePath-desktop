@@ -216,6 +216,7 @@ export interface Exercise {
   taskDescription: string;
   taskDescriptionHe?: string;
   requirements: PracticeObjective[];
+  requirementsHe?: PracticeObjective[];
   starterCode: string;
   solutionCode: string;
   expectedOutput: string;
@@ -299,8 +300,76 @@ export interface TopicProficiency {
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'info' | 'xp' | 'streak';
+  type: 'success' | 'info' | 'xp' | 'streak' | 'error';
   title: string;
   message?: string;
   xpAmount?: number;
+}
+
+export interface UserSnippet {
+  id: string;
+  userId: string;
+  title: string;
+  language: string;
+  code: string;
+  description?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserNote {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  category?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiActionProposal {
+  id: string;
+  action: 'create' | 'update' | 'delete';
+  entityType: 'exercise' | 'snippet' | 'note';
+  title: string;
+  description: string;
+  targetId?: string;
+  beforeData?: Record<string, unknown> | null;
+  afterData: Record<string, unknown>;
+  diffSummary?: string[];
+}
+
+export interface SemanticEvaluationResult {
+  isCorrect: boolean;
+  conceptualScore: number; // 0 - 100
+  feedback: string;
+  feedbackHe?: string;
+  explanation: string;
+  idealSolution?: string;
+}
+
+export interface GlobalSearchResult {
+  id: string;
+  title: string;
+  titleHe?: string;
+  subtitle: string;
+  subtitleHe?: string;
+  category: 'course' | 'lesson' | 'practice' | 'architecture' | 'quiz' | 'snippet' | 'settings';
+  screen: NavScreen;
+  targetId?: string;
+  badge?: string;
+}
+
+export interface PracticeDeckItem extends Exercise {
+  isUserSeeded?: boolean;
+}
+
+export interface PracticeDeckState {
+  items: PracticeDeckItem[];
+  currentIndex: number;
+  totalAnswered: number;
+  correctAnswers: number;
+  accuracyRate: number;
+  isCompleted: boolean;
 }

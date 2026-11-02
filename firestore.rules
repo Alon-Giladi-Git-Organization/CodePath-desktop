@@ -71,13 +71,27 @@ service cloud.firestore {
         (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
     }
 
-    // Collection: User Profile
+    // Collection: User Profile & Multi-Tenant Scoped Subcollections
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
       allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) &&
                     incoming().id == existing().id;
       allow delete: if isOwner(userId);
+
+      // Subcollections: Strictly Scoped Per-User Records (Exercises, Snippets, Notes, History)
+      match /exercises/{exerciseId} {
+        allow read, write: if isOwner(userId) && isValidId(exerciseId);
+      }
+      match /snippets/{snippetId} {
+        allow read, write: if isOwner(userId) && isValidId(snippetId);
+      }
+      match /notes/{noteId} {
+        allow read, write: if isOwner(userId) && isValidId(noteId);
+      }
+      match /history/{historyId} {
+        allow read, write: if isOwner(userId) && isValidId(historyId);
+      }
     }
 
     // Collection: Public Leaderboard

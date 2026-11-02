@@ -3,7 +3,7 @@
   "appId": "1:566833204817:web:2def0e12373b84a56a7270",
   "apiKey": "AIzaSyD3Z7_9YdO40rLtujq3Z7f0eGfzcKLbKNM",
   "authDomain": "codepthapp.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-codepath-f262c1d3-483a-454d-99c6-bc65059b73ea",
+  "firestoreDatabaseId": "(default)",
   "storageBucket": "codepthapp.firebasestorage.app",
   "messagingSenderId": "566833204817",
   "measurementId": "",

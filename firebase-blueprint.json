@@ -55,6 +55,18 @@
       "schema": "userProfile",
       "description": "Private user account profile and learning records"
     },
+    "/users/{userId}/exercises/{exerciseId}": {
+      "schema": "userProfile",
+      "description": "User personal practice challenges and seeded problems"
+    },
+    "/users/{userId}/snippets/{snippetId}": {
+      "schema": "userProfile",
+      "description": "User saved code snippets and solutions"
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "userProfile",
+      "description": "User notes and study cards"
+    },
     "/leaderboard/{userId}": {
       "schema": "leaderboardEntry",
       "description": "Aggregated leaderboard stats for public ranking"

@@ -104,6 +104,11 @@ class SoundEffectsManager {
     this.playNotice();
   }
 
+  /** Warning or cautionary cue */
+  public playWarning() {
+    this.playNotice();
+  }
+
   /** Celebratory fanfare for level up / quiz completion */
   public playFanfare() {
     const ctx = this.getContext();

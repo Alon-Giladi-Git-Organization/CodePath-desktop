@@ -12,7 +12,8 @@ import {
   Languages,
   LogOut,
   CheckCircle2,
-  Code
+  Code,
+  Search
 } from 'lucide-react';
 import { CoseMascot } from '../common/CoseMascot';
 
@@ -25,6 +26,7 @@ interface TopBarProps {
   onOpenMentor: () => void;
   onToggleMobileMenu: () => void;
   onNavigate: (screen: NavScreen) => void;
+  onOpenSearch?: () => void;
   courseTitle?: string;
   lessonTitle?: string;
 }
@@ -36,6 +38,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenMentor,
   onToggleMobileMenu,
   onNavigate,
+  onOpenSearch,
   courseTitle,
   lessonTitle,
 }) => {
@@ -74,7 +77,45 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       {/* Zone 2: Streak & XP Metrics */}
-      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Global Search Button (Ctrl + K) */}
+        {onOpenSearch && (
+          <button
+            id="topbar-search-btn"
+            onClick={onOpenSearch}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-[#F7F7F7] hover:bg-[#EBEBEB] border-2 border-[#E5E5E5] text-[#777777] hover:text-[#3C3C3C] text-xs font-bold transition-all cursor-pointer"
+            title="Search (Ctrl + K)"
+            aria-label="Search"
+          >
+            <Search className="w-3.5 h-3.5 text-[#1CB0F6]" />
+            <span className="hidden md:inline">{language === 'he' ? 'חיפוש' : 'Search'}</span>
+            <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white border border-[#E5E5E5] rounded shadow-xs text-[#777777]">
+              ⌘K
+            </kbd>
+          </button>
+        )}
+
+        {/* Real-time Online & Sync Indicator */}
+        <div
+          id="topbar-sync-status"
+          title={currentUser ? (language === 'he' ? 'מחובר ומסונכרן עם Firestore' : 'Live Firestore Sync Active') : (language === 'he' ? 'מצב אורח (שמירה מקומית)' : 'Local Storage Mode')}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-extrabold cursor-default transition-all ${
+            currentUser
+              ? 'bg-[#EBF7E3] border-[#B5E7A0] text-[#58A700]'
+              : 'bg-[#F7F7F7] border-[#E5E5E5] text-[#777777]'
+          }`}
+        >
+          <span className="relative flex h-2 w-2">
+            {currentUser && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            )}
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${currentUser ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
+          </span>
+          <span className="hidden sm:inline text-[11px]">
+            {currentUser ? (language === 'he' ? 'מסונכרן' : 'Synced') : (language === 'he' ? 'מקומי' : 'Local')}
+          </span>
+        </div>
+
         {/* Streak Counter Pill */}
         <div
           id="topbar-streak-pill"

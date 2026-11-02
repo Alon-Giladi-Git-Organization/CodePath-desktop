@@ -5,13 +5,16 @@ import { useAuth } from './firebase/AuthContext';
 import { 
   syncUserProfileToFirestore, 
   getUserProfileFromFirestore, 
-  subscribeToUserProfile 
+  subscribeToUserProfile,
+  getUserExercisesFromFirestore,
+  getUserSnippetsFromFirestore
 } from './firebase/service';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { BottomNav } from './components/layout/BottomNav';
 import { ToastContainer } from './components/common/ToastContainer';
 import { CodeMentorDrawer } from './components/mentor/CodeMentorDrawer';
+import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 
 import { DashboardView } from './components/dashboard/DashboardView';
 import { CoursesView } from './components/courses/CoursesView';
@@ -51,7 +54,42 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMentorOpen, setIsMentorOpen] = useState(false);
   const [mentorInitialPrompt, setMentorInitialPrompt] = useState<string | undefined>(undefined);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Sticky Collapsible Sidebar state with localStorage persistence
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('codepath_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('codepath_sidebar_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
   const isInitialRemoteLoadDone = useRef(false);
+
+  // Global Keyboard Shortcut: Ctrl + K / Cmd + K for instant search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Notify on Auth Error
   useEffect(() => {
@@ -74,7 +112,7 @@ export default function App() {
 
     let isMounted = true;
 
-    // 1. Initial Remote Fetch from Firestore
+    // 1. Initial Remote Fetch from Firestore & Initial Default Seeding
     async function loadRemoteProfile() {
       try {
         const remoteData = await getUserProfileFromFirestore(currentUser!.uid);
@@ -116,6 +154,10 @@ export default function App() {
             message: language === 'he' ? 'ההתקדמות שלך תישמר בענן בזמן אמת' : 'Your progress is now synced to the cloud',
           });
         }
+
+        // Automatic initial baseline seeding check for subcollections
+        await getUserExercisesFromFirestore(currentUser!.uid);
+        await getUserSnippetsFromFirestore(currentUser!.uid);
       } catch (err) {
         console.error('[App] Failed to load remote profile:', err);
       } finally {
@@ -130,7 +172,6 @@ export default function App() {
       if (!isMounted) return;
       console.info('[App] Realtime profile update received from Firestore');
       setUser((prev) => {
-        // Only update if remote data has higher XP or different progress
         return {
           ...prev,
           ...remoteProfile,
@@ -179,8 +220,12 @@ export default function App() {
     setMentorInitialPrompt(undefined);
   };
 
+  const desktopMarginClass = isRtl
+    ? (isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-64')
+    : (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64');
+
   return (
-    <div className="min-h-screen bg-white text-[#3C3C3C] flex flex-col selection:bg-[#DBF8C5] selection:text-[#58A700]">
+    <div className="min-h-screen bg-white text-[#3C3C3C] flex flex-col selection:bg-[#DBF8C5] selection:text-[#58A700] overflow-x-clip">
       {/* Top Navigation Bar */}
       <TopBar
         currentScreen={currentScreen}
@@ -191,6 +236,7 @@ export default function App() {
         onOpenMentor={() => handleOpenMentor()}
         onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
         onNavigate={navigateTo}
+        onOpenSearch={() => setIsSearchOpen(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -201,11 +247,13 @@ export default function App() {
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
           onOpenMentor={() => handleOpenMentor()}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
           user={user}
         />
 
         {/* Main Workspace Screen Content */}
-        <main className={`flex-1 overflow-y-auto px-4 sm:px-8 py-6 sm:py-8 pb-24 lg:pb-12 ${isRtl ? 'lg:mr-64' : 'lg:ml-64'}`}>
+        <main className={`flex-1 overflow-y-auto px-4 sm:px-8 py-6 sm:py-8 pb-24 lg:pb-12 transition-all duration-300 ease-in-out ${desktopMarginClass}`}>
           {currentScreen === 'dashboard' && (
             <DashboardView
               user={user}
@@ -312,6 +360,13 @@ export default function App() {
         isOpen={isMentorOpen}
         onClose={handleCloseMentor}
         initialPrompt={mentorInitialPrompt}
+      />
+
+      {/* Instant Global Search Modal (Ctrl + K) */}
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onNavigate={navigateTo}
       />
 
       {/* Global Toast Notifications */}

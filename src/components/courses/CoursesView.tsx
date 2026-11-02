@@ -149,32 +149,34 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
             <div
               key={course.id}
               id={`course-card-${course.id}`}
-              className="cose-card cose-card-hover p-6 flex flex-col justify-between group"
+              className="cose-card cose-card-hover p-6 h-full flex flex-col justify-between group"
             >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-[14px] bg-[#F7F7F7] border-2 border-[#E5E5E5] flex items-center justify-center">
-                    {getCourseIcon(course.iconName)}
+              <div className="space-y-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-[14px] bg-[#F7F7F7] border-2 border-[#E5E5E5] flex items-center justify-center">
+                      {getCourseIcon(course.iconName)}
+                    </div>
+
+                    {courseBadge && (
+                      <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-[#EBF8FF] text-[#1CB0F6] border border-[#1CB0F6]/30">
+                        {courseBadge}
+                      </span>
+                    )}
                   </div>
 
-                  {courseBadge && (
-                    <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-[#EBF8FF] text-[#1CB0F6] border border-[#1CB0F6]/30">
-                      {courseBadge}
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-extrabold text-[#3C3C3C] group-hover:text-[#58CC02] transition-colors">
-                    {courseTitle}
-                  </h3>
-                  <p className="text-xs text-[#777777] font-semibold mt-1.5 line-clamp-2 leading-relaxed">
-                    {courseDesc}
-                  </p>
+                  <div>
+                    <h3 className="text-lg font-extrabold text-[#3C3C3C] group-hover:text-[#58CC02] transition-colors">
+                      {courseTitle}
+                    </h3>
+                    <p className="text-xs text-[#777777] font-semibold mt-1.5 line-clamp-2 leading-relaxed">
+                      {courseDesc}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-1.5 pt-3">
                   <div className="flex justify-between text-xs font-bold text-[#777777]">
                     <span>{t('coursesLessonCount').replace('{count}', String(course.totalLessons))}</span>
                     <span className="text-[#58A700] font-extrabold">{progressPercent}%</span>
@@ -183,8 +185,8 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-5 border-t-2 border-[#E5E5E5] flex items-center gap-2 mt-4">
+              {/* Action Buttons with Uniform Baseline Alignment */}
+              <div className="pt-5 border-t-2 border-[#E5E5E5] flex items-center gap-2 mt-auto">
                 <button
                   onClick={() => setInspectedCourse(course)}
                   className="btn-outline flex-1 text-xs font-extrabold !py-2.5"
