@@ -161,7 +161,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
     const isPerfect = finalScore === totalQuestions;
 
     return (
-      <div id="quiz-results-screen" className="max-w-2xl mx-auto space-y-8 pb-20">
+      <div id="quiz-results-screen" className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
         <div className="cose-card p-8 sm:p-10 text-center space-y-6">
           <div className="flex justify-center">
             <CoseMascot mood={isPerfect ? 'celebrating' : 'proud'} size="xl" />
@@ -216,7 +216,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const questionText = isHe && currentQuestion.questionHe ? currentQuestion.questionHe : currentQuestion.question;
 
   return (
-    <div id="quiz-screen" className="max-w-3xl mx-auto space-y-8 pb-20">
+    <div id="quiz-screen" className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
       {/* Top Header & Progress */}
       <div className="cose-card p-5 sm:p-6 space-y-3">
         <div className="flex items-center justify-between text-xs font-extrabold text-[#777777] uppercase tracking-wider">

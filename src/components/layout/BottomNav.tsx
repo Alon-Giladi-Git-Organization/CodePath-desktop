@@ -18,12 +18,12 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isHe = language === 'he';
 
   const items: { screen: NavScreen; label: string; icon: React.ReactNode }[] = [
     { screen: 'dashboard', label: t('navDashboard'), icon: <LayoutDashboard className="w-5 h-5" /> },
-    { screen: 'courses', label: t('navCourses'), icon: <Compass className="w-5 h-5" /> },
-    { screen: 'practice', label: t('navPractice'), icon: <Terminal className="w-5 h-5" /> },
+    { screen: 'practice', label: isHe ? 'תרגול ומסלולים' : 'Practice', icon: <span className="text-xl">🕸️</span> },
     { screen: 'architecture', label: t('navArchitecture'), icon: <Layers className="w-5 h-5" /> },
     { screen: 'leaderboard', label: t('navLeaderboard'), icon: <Award className="w-5 h-5" /> },
     { screen: 'achievements', label: t('navAchievements'), icon: <Trophy className="w-5 h-5" /> },

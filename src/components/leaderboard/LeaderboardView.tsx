@@ -132,7 +132,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   const topThree = leaderboard.slice(0, 3);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
       {/* Header Banner */}
       <div className="cose-card p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">

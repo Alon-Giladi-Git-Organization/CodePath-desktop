@@ -77,7 +77,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     : (lesson.importantTip?.description || (typeof lesson.importantTip === 'string' ? lesson.importantTip : ''));
 
   return (
-    <div id="lesson-screen" className="max-w-4xl mx-auto space-y-8 pb-20">
+    <div id="lesson-screen" className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
       {/* Top Breadcrumb & Progress Header */}
       <div className="cose-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">

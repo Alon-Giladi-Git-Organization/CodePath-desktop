@@ -297,7 +297,7 @@ export const ArchitectureLabView: React.FC<ArchitectureLabViewProps> = ({
   const goodExplanationText = isHe && currentChallenge.goodCodeExplanationHe ? currentChallenge.goodCodeExplanationHe : currentChallenge.goodCodeExplanation;
 
   return (
-    <div id="architecture-screen" className="max-w-6xl mx-auto space-y-8 pb-20">
+    <div id="architecture-screen" className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
       {/* Top Banner */}
       <div className="cose-card p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">

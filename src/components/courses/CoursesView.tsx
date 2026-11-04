@@ -81,7 +81,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({ user, onNavigate }) =>
   };
 
   return (
-    <div id="courses-screen" className="space-y-8 max-w-6xl mx-auto pb-20">
+    <div id="courses-screen" className="space-y-5 sm:space-y-6 w-full max-w-full pb-8">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

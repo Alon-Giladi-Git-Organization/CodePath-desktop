@@ -22,9 +22,11 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../../utils/sound';
 
+import { SpiderWebCorner } from '../common/SpiderWebDecor';
+
 interface DashboardViewProps {
   user: UserProfile;
-  onNavigate: (screen: NavScreen, opts?: { courseId?: string; lessonId?: string; exerciseId?: string; quizId?: string }) => void;
+  onNavigate: (screen: NavScreen, opts?: { courseId?: string; lessonId?: string; exerciseId?: string; quizId?: string; language?: string }) => void;
   onOpenMentor: (initialPrompt?: string) => void;
 }
 
@@ -83,10 +85,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div id="dashboard-screen" className="space-y-10 max-w-5xl mx-auto pb-16">
+    <div id="dashboard-screen" className="space-y-5 sm:space-y-6 w-full max-w-full pb-8">
       {/* 1. Playful Hero Greeting Banner */}
       <div className="cose-card relative overflow-hidden bg-white p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-start max-w-2xl">
+        <SpiderWebCorner position="top-right" size={72} color="#58CC02" />
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-start max-w-2xl relative z-10">
           <CoseMascot
             mood="happy"
             size="lg"
@@ -190,6 +193,58 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {t('dashStudyTime')}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 2.5 Language Weave & Practice Sub-modules Bar */}
+      <div className="cose-card p-4 sm:p-5 relative overflow-hidden space-y-3">
+        <SpiderWebCorner position="top-right" size={54} color="#58CC02" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#F0F0F0] pb-2.5 relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🕸️</span>
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-[#3C3C3C]">
+                {isHe ? 'רשת שפות התכנות ותרגול הקוד' : 'Languages & Code Practice Hub'}
+              </h3>
+              <p className="text-[11px] text-[#777777] font-semibold">
+                {isHe ? 'בחר שפה לתרגול תחביר Drag & Drop, צפייה בשיעורים או כתיבה חופשית' : 'Select a language for drag & drop syntax practice, tracks, or free coding'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('practice')}
+            className="text-xs font-black text-[#58A700] hover:text-[#468500] flex items-center gap-1 self-start sm:self-center transition-colors cursor-pointer"
+          >
+            <span>{isHe ? 'פתח את כל התרגולים ›' : 'Open All Practice ›'}</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 relative z-10">
+          {[
+            { id: 'python', courseId: 'python-beginners', icon: '🐍', nameHe: 'פייתון', nameEn: 'Python', descHe: 'משתנים ולולאות' },
+            { id: 'javascript', courseId: 'javascript-beginners', icon: '⚡', nameHe: 'JavaScript', nameEn: 'JS & TS', descHe: 'DOM ומערכים' },
+            { id: 'sql', courseId: 'sql-fundamentals', icon: '🗄️', nameHe: 'בסיסי נתונים SQL', nameEn: 'SQL & DB', descHe: 'SELECT & JOIN' },
+            { id: 'web', courseId: 'html-css-essentials', icon: '🌐', nameHe: 'פיתוח Web', nameEn: 'Web & CSS', descHe: 'Flexbox וסמנטיקה' },
+            { id: 'git', courseId: 'git-fundamentals', icon: '🐙', nameHe: 'ניהול גרסאות Git', nameEn: 'Git Control', descHe: 'Commits & Diff' },
+            { id: 'gamedev', courseId: 'game-dev-canvas', icon: '🎮', nameHe: 'פיתוח משחקים', nameEn: 'Game Dev', descHe: 'Canvas 60 FPS' },
+          ].map((lang) => (
+            <button
+              key={lang.id}
+              onClick={() => {
+                soundFx.playClick();
+                onNavigate('practice', { courseId: lang.courseId, language: lang.id });
+              }}
+              className="flex flex-col items-center justify-center p-3 rounded-[14px] bg-[#F7F7F7] hover:bg-[#EBF7E3] border-2 border-[#E5E5E5] hover:border-[#58CC02] transition-all cursor-pointer group text-center"
+            >
+              <span className="text-2xl mb-1 group-hover:scale-115 transition-transform">{lang.icon}</span>
+              <span className="text-xs font-black text-[#3C3C3C] group-hover:text-[#58A700] transition-colors truncate max-w-full">
+                {isHe ? lang.nameHe : lang.nameEn}
+              </span>
+              <span className="text-[10px] text-[#AFAFAF] font-semibold truncate max-w-full">
+                {lang.descHe}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 

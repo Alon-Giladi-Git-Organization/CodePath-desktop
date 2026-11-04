@@ -1,4 +1,5 @@
 import { Course, Lesson, Exercise, Quiz, Achievement, MentorMessage, DailyActivity, TopicProficiency, UserProfile } from '../types';
+import { ADDITIONAL_LANGUAGE_EXERCISES } from './languageExercises';
 
 export const INITIAL_USER: UserProfile = {
   name: 'Alex',
@@ -365,6 +366,21 @@ while seconds > 0:
     seconds -= 1
 
 print("Blast off!")`,
+    codeTemplate: `# 1. Set initial countdown timer
+seconds = 5
+
+# 2. Loop while condition holds true
+{{SLOT_0}} seconds > 0:
+    print(f"T-minus {seconds}")
+    {{SLOT_1}}
+
+# 3. Final message
+print("Blast off!")`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'while' },
+      { id: 'SLOT_1', correctAnswer: 'seconds -= 1' },
+    ],
+    wordBank: ['while', 'seconds -= 1', 'for', 'seconds += 1', 'if', 'seconds = 0', 'pass', 'print'],
     expectedOutput: `T-minus 5\nT-minus 4\nT-minus 3\nT-minus 2\nT-minus 1\nBlast off!`,
     hints: [
       'Hint 1 (Concept): Remember that a while loop needs a condition that tests the seconds variable, like `seconds > 0`.',
@@ -430,6 +446,19 @@ while current_num <= 10:
     current_num += 2
 
 print(f"Total: {total_sum}")`,
+    codeTemplate: `total_sum = 0
+current_num = 2
+
+while current_num {{SLOT_0}} 10:
+    total_sum {{SLOT_1}} current_num
+    current_num += 2
+
+print(f"Total: {total_sum}")`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: '<=' },
+      { id: 'SLOT_1', correctAnswer: '+=' },
+    ],
+    wordBank: ['<=', '+=', '>=', '=', '==', '-=', 'in', 'range'],
     expectedOutput: `Total: 30`,
     hints: [
       'Hint 1: To add to a total, use `total_sum += current_num`.',
@@ -487,6 +516,22 @@ else:
     price = 15
 
 print(f"Ticket price: \${price}")`,
+    codeTemplate: `age = 70
+price = 0
+
+if age < 12:
+    price = 8
+{{SLOT_0}} age >= 65:
+    price = 10
+{{SLOT_1}}:
+    price = 15
+
+print(f"Ticket price: \${price}")`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'elif' },
+      { id: 'SLOT_1', correctAnswer: 'else' },
+    ],
+    wordBank: ['elif', 'else', 'else if', 'if', 'then', 'case', 'switch'],
     expectedOutput: `Ticket price: $10`,
     hints: [
       'Hint 1: Start with `if age < 12:` to catch children first.',
@@ -525,6 +570,15 @@ console.log(passing);`,
     solutionCode: `const scores = [25, 60, 45, 80, 95, 30];
 const passing = scores.filter(s => s > 50);
 console.log(passing);`,
+    codeTemplate: `const scores = [25, 60, 45, 80, 95, 30];
+
+const passing = scores.{{SLOT_0}}(s {{SLOT_1}} s > 50);
+console.log(passing);`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'filter' },
+      { id: 'SLOT_1', correctAnswer: '=>' },
+    ],
+    wordBank: ['filter', '=>', 'map', '->', 'forEach', 'reduce', '==', 'includes'],
     expectedOutput: `[ 60, 80, 95 ]`,
     hints: ['Use arrow syntax `s => s > 50`.'],
     hintsHe: ['השתמש בתחביר חץ `s => s > 50`.'],
@@ -550,12 +604,149 @@ console.log(passing);`,
     starterCode: `-- Select active users from table
 SELECT * FROM users WHERE status = 'active';`,
     solutionCode: `SELECT * FROM users WHERE status = 'active';`,
+    codeTemplate: `{{SLOT_0}} * FROM users
+{{SLOT_1}} status = 'active';`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'SELECT' },
+      { id: 'SLOT_1', correctAnswer: 'WHERE' },
+    ],
+    wordBank: ['SELECT', 'WHERE', 'FROM', 'HAVING', 'GROUP BY', 'UPDATE', 'INSERT'],
     expectedOutput: `2 rows returned`,
     hints: ['Remember the WHERE keyword filters rows before they are returned.'],
     hintsHe: ['זכור שמילת המפתח WHERE מסננת שורות לפני החזרתן.'],
     errorGuides: [],
     xpReward: 50,
   },
+  {
+    id: 'ex-web-flexbox-1',
+    lessonId: 'html-2',
+    courseId: 'html-css-essentials',
+    title: 'CSS Flexbox Centering',
+    titleHe: 'מירכוז אלמנטים עם CSS Flexbox',
+    language: 'web',
+    difficulty: 'Beginner',
+    taskDescription: 'Center a spider mascot badge perfectly inside a container using display flex and centering properties.',
+    taskDescriptionHe: 'מרכז את תגית העכביש במרכז הקונטיינר בעזרת display: flex ומאפייני מירכוז.',
+    requirements: [
+      { id: 'req-1', text: 'Set display: flex' },
+      { id: 'req-2', text: 'Set justify-content: center and align-items: center' }
+    ],
+    requirementsHe: [
+      { id: 'req-1', text: 'הגדר display: flex' },
+      { id: 'req-2', text: 'הגדר justify-content ו-align-items למירכוז מושלם' }
+    ],
+    starterCode: `.spider-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}`,
+    solutionCode: `.spider-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}`,
+    codeTemplate: `.spider-container {
+  display: {{SLOT_0}};
+  justify-content: center;
+  {{SLOT_1}}: center;
+}`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'flex' },
+      { id: 'SLOT_1', correctAnswer: 'align-items' },
+    ],
+    wordBank: ['flex', 'align-items', 'grid', 'block', 'justify-items', 'align-content', 'relative'],
+    expectedOutput: `Container centered!`,
+    hints: ['Flexbox uses `align-items` for cross-axis alignment.'],
+    hintsHe: ['Flexbox משתמש ב-`align-items` למירכוז אנכי על הציר המשני.'],
+    errorGuides: [],
+    xpReward: 50,
+  },
+  {
+    id: 'ex-git-commit-1',
+    lessonId: 'git-2',
+    courseId: 'git-fundamentals',
+    title: 'Git Add & Commit Snapshot',
+    titleHe: 'הוספה ויצירת Commit ב-Git',
+    language: 'git',
+    difficulty: 'Beginner',
+    taskDescription: 'Stage your modified code files and record a permanent commit message into history.',
+    taskDescriptionHe: 'העבר את הקבצים לשלב ה-Staging וצור Commit עם הודעה מתארת.',
+    requirements: [
+      { id: 'req-1', text: 'Run git add .' },
+      { id: 'req-2', text: 'Run git commit -m "feat: weave spidey web"' }
+    ],
+    requirementsHe: [
+      { id: 'req-1', text: 'בצע git add .' },
+      { id: 'req-2', text: 'בצע git commit -m עם הודעת קומיט' }
+    ],
+    starterCode: `# 1. Stage all changes
+git add .
+
+# 2. Record commit
+git commit -m "feat: weave spidey web"`,
+    solutionCode: `git add .
+git commit -m "feat: weave spidey web"`,
+    codeTemplate: `# 1. Stage all changes
+git {{SLOT_0}} .
+
+# 2. Record commit snapshot
+git {{SLOT_1}} -m "feat: weave spidey web"`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'add' },
+      { id: 'SLOT_1', correctAnswer: 'commit' },
+    ],
+    wordBank: ['add', 'commit', 'push', 'pull', 'clone', 'checkout', 'branch', 'merge'],
+    expectedOutput: `[main 4f89a1] feat: weave spidey web`,
+    hints: ['First `add`, then `commit` with the `-m` flag.'],
+    hintsHe: ['תחילה `add` לקבצים, ולאחר מכן `commit` עם הדגל `-m`.'],
+    errorGuides: [],
+    xpReward: 50,
+  },
+  {
+    id: 'ex-game-loop-1',
+    lessonId: 'game-1',
+    courseId: 'game-dev-canvas',
+    title: 'HTML5 60 FPS Game Loop',
+    titleHe: 'לולאת משחק ב-60 FPS עם Canvas',
+    language: 'gamedev',
+    difficulty: 'Intermediate',
+    taskDescription: 'Create the continuous game loop cycle using requestAnimationFrame to update and render Spidey.',
+    taskDescriptionHe: 'צור את לולאת המשחק הרציפה בעזרת requestAnimationFrame לעדכון וציור Spidey.',
+    requirements: [
+      { id: 'req-1', text: 'Call update() and draw()' },
+      { id: 'req-2', text: 'Invoke requestAnimationFrame(gameLoop)' }
+    ],
+    requirementsHe: [
+      { id: 'req-1', text: 'קרא ל-update() ול-draw()' },
+      { id: 'req-2', text: 'קרא ל-requestAnimationFrame(gameLoop)' }
+    ],
+    starterCode: `function gameLoop() {
+  updateSpiderPosition();
+  drawSpiderWeb();
+  requestAnimationFrame(gameLoop);
+}`,
+    solutionCode: `function gameLoop() {
+  updateSpiderPosition();
+  drawSpiderWeb();
+  requestAnimationFrame(gameLoop);
+}`,
+    codeTemplate: `function gameLoop() {
+  updateSpiderPosition();
+  drawSpiderWeb();
+  {{SLOT_0}}({{SLOT_1}});
+}`,
+    syntaxSlots: [
+      { id: 'SLOT_0', correctAnswer: 'requestAnimationFrame' },
+      { id: 'SLOT_1', correctAnswer: 'gameLoop' },
+    ],
+    wordBank: ['requestAnimationFrame', 'gameLoop', 'setTimeout', 'setInterval', 'cancelAnimationFrame', 'window', 'this'],
+    expectedOutput: `Game loop running at 60fps`,
+    hints: ['requestAnimationFrame provides smooth vsync animation for browsers.'],
+    hintsHe: ['requestAnimationFrame מספקת סנכרון מושלם לקצב רענון המסך של הדפדפן (60Hz / 120Hz).'],
+    errorGuides: [],
+    xpReward: 60,
+  },
+  ...ADDITIONAL_LANGUAGE_EXERCISES,
 ];
 
 export const QUIZZES: Record<string, Quiz> = {

@@ -204,6 +204,12 @@ export interface ErrorGuide {
   hintHe?: string;
 }
 
+export interface SyntaxSlot {
+  id: string;
+  correctAnswer: string;
+  label?: string;
+}
+
 export interface Exercise {
   id: string;
   lessonId: string;
@@ -220,6 +226,9 @@ export interface Exercise {
   starterCode: string;
   solutionCode: string;
   expectedOutput: string;
+  codeTemplate?: string;
+  syntaxSlots?: SyntaxSlot[];
+  wordBank?: string[];
   hints: string[];
   hintsHe?: string[];
   errorGuides: ErrorGuide[];

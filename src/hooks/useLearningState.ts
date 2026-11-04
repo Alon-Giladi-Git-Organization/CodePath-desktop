@@ -43,6 +43,7 @@ export function useLearningState() {
   const [activeLessonId, setActiveLessonId] = useState<string>(user.activeLessonId);
   const [activeExerciseId, setActiveExerciseId] = useState<string>(user.activeExerciseId);
   const [activeQuizId, setActiveQuizId] = useState<string>(user.activeQuizId);
+  const [activeLanguage, setActiveLanguage] = useState<string>('all');
 
   // Mentor drawer
   const [isMentorOpen, setIsMentorOpen] = useState<boolean>(false);
@@ -242,12 +243,14 @@ export function useLearningState() {
     lessonId?: string;
     exerciseId?: string;
     quizId?: string;
+    language?: string;
   }) => {
     soundFx.playClick();
     if (opts?.courseId) setActiveCourseId(opts.courseId);
     if (opts?.lessonId) setActiveLessonId(opts.lessonId);
     if (opts?.exerciseId) setActiveExerciseId(opts.exerciseId);
     if (opts?.quizId) setActiveQuizId(opts.quizId);
+    if (opts?.language) setActiveLanguage(opts.language);
     setCurrentScreen(screen);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -297,6 +300,8 @@ export function useLearningState() {
     activeLessonId,
     activeExerciseId,
     activeQuizId,
+    activeLanguage,
+    setActiveLanguage,
     isMentorOpen,
     mentorInitialPrompt,
     isDarkMode,

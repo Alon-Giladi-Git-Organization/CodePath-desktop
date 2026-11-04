@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../../utils/sound';
 import confetti from 'canvas-confetti';
+import { CoseMascot } from '../common/CoseMascot';
 
 interface DragDropPracticeViewProps {
   user: UserProfile;
@@ -230,33 +231,36 @@ export const DragDropPracticeView: React.FC<DragDropPracticeViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20 select-none">
+    <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8 select-none">
       {/* Banner & Category Selector */}
-      <div className="cose-card p-6 sm:p-8 bg-gradient-to-r from-[#FFC800]/10 via-[#1CB0F6]/10 to-transparent border-2 border-[#FFC800]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#FFC800]">
-            <Puzzle className="w-6 h-6 fill-current" />
-            <span className="text-xs font-black uppercase tracking-widest text-[#3C3C3C]">
-              {isHe ? 'משחקי Drag & Drop / Word-Bank (סגנון Duolingo)' : 'Duolingo-Style Code Completion'}
-            </span>
+      <div className="cose-card p-4 sm:p-6 bg-gradient-to-r from-[#8B5CF6]/10 via-[#1CB0F6]/10 to-transparent border-2 border-[#8B5CF6]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <CoseMascot mood="happy" size="md" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[#8B5CF6]">
+              <Puzzle className="w-5 h-5 fill-current" />
+              <span className="text-xs font-black uppercase tracking-widest text-[#3C3C3C]">
+                {isHe ? 'משחקי Drag & Drop / מאגר סינתקס' : 'Syntax Token Completion'}
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-[#3C3C3C]">
+              {isHe ? 'השלמת מילות מפתח ומפעילים בקוד' : 'Syntax Token Code Completion'}
+            </h1>
+            <p className="text-xs sm:text-sm font-semibold text-[#777777]">
+              {isHe
+                ? 'גרור או לחץ על תגיות הקוד ממאגר הסינתקס למטה כדי להשלים את הלוגיקה בדיוק מושלם.'
+                : 'Drag or click syntax chips from the word bank to complete the code logic.'}
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#3C3C3C]">
-            {isHe ? 'השלמת מילות מפתח בקוד' : 'Word-Bank Code Completion'}
-          </h1>
-          <p className="text-sm font-semibold text-[#777777]">
-            {isHe
-              ? 'גרור או לחץ על תגיות הקוד מהבנק למטה כדי להשלים את בלוק הקוד בצורה מדויקת.'
-              : 'Drag or click code chips from the word bank into the drop zones to fix the code.'}
-          </p>
         </div>
 
         {/* AI Generator Button */}
         <button
           onClick={handleGenerateAIChallenge}
           disabled={isGeneratingAI}
-          className="btn-outline text-xs font-extrabold !py-2.5 !px-4 border-[#1CB0F6] text-[#1CB0F6] hover:bg-[#EBF8FF] flex items-center gap-2 shrink-0"
+          className="btn-outline text-xs font-extrabold !py-2.5 !px-4 border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#F3E8FF] flex items-center gap-2 shrink-0"
         >
-          <Sparkles className="w-4 h-4 text-[#1CB0F6] animate-pulse" />
+          <Sparkles className="w-4 h-4 text-[#8B5CF6] animate-pulse" />
           <span>{isGeneratingAI ? (isHe ? 'מייצר אתגר...' : 'Generating...') : (isHe ? '✨ יצור אתגר חדש ב-AI' : '✨ Generate AI Challenge')}</span>
         </button>
       </div>

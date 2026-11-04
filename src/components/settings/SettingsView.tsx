@@ -103,7 +103,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div id="settings-screen" className="max-w-4xl mx-auto space-y-8 pb-20">
+    <div id="settings-screen" className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#3C3C3C]">
           {t('settingsTitle')}

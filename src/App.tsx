@@ -31,9 +31,11 @@ export default function App() {
     user,
     setUser,
     currentScreen,
+    activeCourseId,
     activeLessonId,
     activeExerciseId,
     activeQuizId,
+    activeLanguage,
     isDarkMode,
     toggleDarkMode,
     toggleSound,
@@ -221,12 +223,12 @@ export default function App() {
   };
 
   const desktopMarginClass = isRtl
-    ? (isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-64')
-    : (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64');
+    ? (isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-72')
+    : (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72');
 
   return (
     <div className="min-h-screen bg-white text-[#3C3C3C] flex flex-col selection:bg-[#DBF8C5] selection:text-[#58A700] overflow-x-clip">
-      {/* Top Navigation Bar */}
+      {/* Mobile-only Top Header Bar (lg:hidden) */}
       <TopBar
         currentScreen={currentScreen}
         user={user}
@@ -239,21 +241,23 @@ export default function App() {
         onOpenSearch={() => setIsSearchOpen(true)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Desktop Sidebar & Mobile Drawer Navigation */}
+      <div className="flex-1 flex">
+        {/* Unified Desktop & Mobile Side Navbar */}
         <Sidebar
           currentScreen={currentScreen}
           onNavigate={navigateTo}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
           onOpenMentor={() => handleOpenMentor()}
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onToggleSound={toggleSound}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}
           user={user}
         />
 
-        {/* Main Workspace Screen Content */}
-        <main className={`flex-1 overflow-y-auto px-4 sm:px-8 py-6 sm:py-8 pb-24 lg:pb-12 transition-all duration-300 ease-in-out ${desktopMarginClass}`}>
+        {/* Main Workspace Screen Content - Full Screen with Minimal Aesthetic Margins */}
+        <main className={`flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 lg:p-5 pb-20 lg:pb-8 transition-all duration-300 ease-in-out w-full max-w-full ${desktopMarginClass}`}>
           {currentScreen === 'dashboard' && (
             <DashboardView
               user={user}
@@ -263,9 +267,15 @@ export default function App() {
           )}
 
           {currentScreen === 'courses' && (
-            <CoursesView
+            <CodePracticeView
+              exerciseId={activeExerciseId}
               user={user}
+              initialSubModule="tracks"
+              initialLanguage={activeLanguage}
+              initialCourseId={activeCourseId}
               onNavigate={navigateTo}
+              onCompleteExercise={completeExercise}
+              onOpenMentor={handleOpenMentor}
             />
           )}
 
@@ -283,7 +293,9 @@ export default function App() {
             <CodePracticeView
               exerciseId={activeExerciseId}
               user={user}
-              initialSubModule="ide"
+              initialSubModule="syntax"
+              initialLanguage={activeLanguage}
+              initialCourseId={activeCourseId}
               onNavigate={navigateTo}
               onCompleteExercise={completeExercise}
               onOpenMentor={handleOpenMentor}
@@ -295,6 +307,8 @@ export default function App() {
               exerciseId={activeExerciseId}
               user={user}
               initialSubModule="dragdrop"
+              initialLanguage={activeLanguage}
+              initialCourseId={activeCourseId}
               onNavigate={navigateTo}
               onCompleteExercise={completeExercise}
               onOpenMentor={handleOpenMentor}
