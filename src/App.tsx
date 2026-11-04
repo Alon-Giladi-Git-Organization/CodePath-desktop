@@ -81,8 +81,9 @@ export default function App() {
 
   const isInitialRemoteLoadDone = useRef(false);
 
-  // Global Keyboard Shortcut: Ctrl + K / Cmd + K for instant search
+  // Global Keyboard Shortcut: Ctrl + K / Cmd + K for instant search & runtime document title
   useEffect(() => {
+    document.title = 'Codaline - Weave Your Code Web';
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();

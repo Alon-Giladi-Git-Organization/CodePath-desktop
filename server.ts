@@ -1,5 +1,4 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -18,7 +17,7 @@ app.use(express.json());
 
 // Initialize Gemini Client
 const apiKey = process.env.GEMINI_API_KEY;
-let genAI: GoogleGenAI | null = null;
+let genAI = null;
 let isApiKeyActive = false;
 
 if (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 10) {
@@ -136,7 +135,7 @@ Respond in pure JSON.`;
               return res.json(parsed);
             }
           }
-        } catch (modelErr: unknown) {
+        } catch (modelErr) {
           const errMsg = modelErr instanceof Error ? modelErr.message : String(modelErr);
           if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid')) {
             isApiKeyActive = false;
@@ -414,7 +413,7 @@ Provide your response in JSON:
           const parsed = JSON.parse(responseText);
           return res.json(parsed);
         }
-      } catch (geminiErr: unknown) {
+      } catch (geminiErr) {
         const msg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
         if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid')) {
           isApiKeyActive = false;
@@ -545,7 +544,7 @@ Return pure JSON with schema:
           const parsed = JSON.parse(text);
           return res.json(parsed);
         }
-      } catch (err: unknown) {
+      } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid')) {
           isApiKeyActive = false;
@@ -555,7 +554,8 @@ Return pure JSON with schema:
 
     // Context-aware deterministic fallback incorporating the user database snapshot
     const lowerQ = cleanQuery.toLowerCase();
-    const learner = (userDataSnapshot as any)?.learner || {};
+    const snapshotObj = userDataSnapshot && typeof userDataSnapshot === 'object' ? userDataSnapshot : {};
+    const learner = 'learner' in snapshotObj && snapshotObj.learner ? snapshotObj.learner : {};
     const learnerName = learner.name || 'Learner';
     const learnerXp = learner.xp || 0;
 
@@ -563,8 +563,8 @@ Return pure JSON with schema:
       ? `שלום ${learnerName}! ראיתי שצברת כבר ${learnerXp} XP. שאלתך מצוינת - בוא נפרק אותה לצעדים קטנים.`
       : `Hi ${learnerName}! I see you have earned ${learnerXp} XP on your journey. Let's break this down step-by-step.`;
 
-    let codeSnippet: string | undefined = undefined;
-    let actionProposal: any = undefined;
+    let codeSnippet = undefined;
+    let actionProposal = undefined;
 
     if (lowerQ.includes('save') || lowerQ.includes('snippet') || lowerQ.includes('שמור')) {
       responseText = isHe
@@ -701,7 +701,7 @@ Return pure JSON.`;
           const parsed = JSON.parse(text);
           return res.json(parsed);
         }
-      } catch (err: unknown) {
+      } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid')) {
           isApiKeyActive = false;
@@ -741,6 +741,7 @@ Return pure JSON.`;
  */
 async function startServer() {
   if (!isProd) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
